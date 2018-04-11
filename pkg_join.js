@@ -1,4 +1,4 @@
-// var pkg_join   = require('users/kongdd/pkgs:src/Joins.js');
+// var pkg_join   = require('users/kongdd/public:pkg_join.js');
 /** 
  * Use this filter to find the nearest LAI and Albedo, and Emissivity data
  * of meteorological forcing data 

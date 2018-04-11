@@ -1,11 +1,10 @@
-// var pkg_vis   = require('users/kongdd/pkgs:src/pkg_vis.js');
-/////////////////// FUNCTIONS ////////////////////////////////////////
+// var pkg_vis   = require('users/kongdd/public:pkg_vis.js');
 
 /**
  * [series description]
  *
  * Show the mean values of input region, and click data points and draw the corresponding 
- * data image.
+ * date image.
  * 
  * @param  {[type]} ImgCol    [description]
  * @param  {[type]} vis       [description]

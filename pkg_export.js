@@ -1,4 +1,4 @@
-// var pkg_export = require('users/kongdd/pkgs:src/Export_Table.js');
+// var pkg_export = require('users/kongdd/public:pkg_export.js');
 
 /**
  * Clip image data of points buffer

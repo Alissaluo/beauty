@@ -1,4 +1,4 @@
-// var pkg_trend = require('users/kongdd/pkgs:Math/pkg_trend.js');
+// var pkg_trend = require('users/kongdd/public:Math/pkg_trend.js');
 
 // img should only have dependant band
 function createConstantBand(img) {

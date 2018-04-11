@@ -18,7 +18,7 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
  * Updated 10 Jan, 2018
  * Dongdong Kong, Sun Yat-sen Univ
  */ 
-var pkg_vis   = require('users/kongdd/pkgs:src/pkg_vis.js');
+var pkg_vis   = require('users/kongdd/public:src/pkg_vis.js');
 
 MCD12Q1_005 = MCD12Q1_005.select(['Land_Cover_Type_1']); //IGBP type
 var lc_colors_005 = ["#aec3d6", "#162103", "#235123", "#399b38", "#38eb38", "#39723b", 
