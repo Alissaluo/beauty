@@ -129,7 +129,7 @@ exports = {
 // debug();
 function debug(){
     // test movmean_lst function through LAI ImgCol
-    var pkg_LAI    = require('users/kongdd/pkgs:data/ImgCol_MODIS_LAI.js');
+    var pkg_LAI    = require('users/kongdd/public:data/ImgCol_MODIS_LAI.js');
     var pkg_export = require('users/kongdd/public:pkg_export.js');
     
     var ImgCol = pkg_LAI.LAI_4d_mask.limit(92);
