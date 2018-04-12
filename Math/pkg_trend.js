@@ -181,8 +181,8 @@ function imgcol_addSeasonProb(imgcol){
  * @param  {[type]} ImgCol  [description]
  * @param  {[type]} prop    [description]
  * @param  {[type]} reducer [description]
- * @param  {boolean} delta  Just for grace deltaS = x_end - x_begin
-
+ * @param  {boolean} delta  If delta = true, reducer will be ignore, and return 
+ *                          Just deltaY = y_end - y_begin. (for dataset like GRACE)
  * @return {[type]}         [description]
  */
 function aggregate_prop(ImgCol, prop, reducer, delta){
@@ -196,9 +196,9 @@ function aggregate_prop(ImgCol, prop, reducer, delta){
     // print(dates);
     var filterDateEq = ee.Filter.equals({ leftField : prop, rightField: prop});
     var saveAllJoin = ee.Join.saveAll({
-      matchesKey: 'matches',
-      ordering: 'system:time_start',
-      ascending: true
+        matchesKey: 'matches',
+        ordering  : 'system:time_start',
+        ascending : true
     });
     var ImgCol_new = saveAllJoin.apply(dates, ImgCol, filterDateEq)
     // .aside(print)
@@ -211,8 +211,8 @@ function aggregate_prop(ImgCol, prop, reducer, delta){
         
         var res = ee.Algorithms.If(delta, last.subtract(first), imgcol.reduce(reducer))
         return ee.Image(res)
-            .copyProperties(ee.Image(imgcol.first()), ['Year', 'YearStr', 'YearMonth', 'Season', 'system:time_start'])
-            .copyProperties(img, ['system:id']);
+            .copyProperties(ee.Image(imgcol.first()), ['Year', 'YearStr', 'YearMonth', 'Season', 'd8', 'system:time_start'])
+            .copyProperties(img, ['system:id', prop]);
     });
     return ee.ImageCollection(ImgCol_new);
 }
