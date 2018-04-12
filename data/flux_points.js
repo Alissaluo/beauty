@@ -6,7 +6,8 @@ points     = points.select(['site']); // reduce the export data size, only one b
 
 /** 1. Change points system:index, has to convert to list first. */
 points = points.toList(points.size()).map(function(f){
-    return ee.Feature(f).set('system:index', f.get('site'));
+    f = ee.Feature(f);
+    return f.set('system:index', f.get('site'));
 });
 points = ee.FeatureCollection(points);
 
