@@ -49,11 +49,11 @@ function linearTrend(ImgCol, robust){
     return coef.addBands(tval);
 }
 
-function get_trend(imgcol, bands, robust){
-    if (typeof bands  === 'undefined') {bands = 0}
+function imgcol_trend(imgcol, band, robust){
+    if (typeof band   === 'undefined') {band = 0}
     if (typeof robust === 'undefined') {robust = true}
     
-    imgcol = imgcol.select(bands).map(function(img){
+    imgcol = imgcol.select(band).map(function(img){
         img = addSeasonProb(img);      // add seasonal variable
         img = createConstantBand(img); // add constant and Year band
         return img;
@@ -100,27 +100,36 @@ function addSeasonProb(img, pheno){
         .set('YearMonth', date.format('YYYY-MM')); //seasons.get(month.subtract(1))
 }
 
-
-/**
- * add d8 prop to every img
- */ 
-function add_d8_date(img, beginDate){
+/** add d8 prop to every img */
+function add_d8_date(img, beginDate, IncludeYear){
+    if (typeof IncludeYear === 'undefined') { IncludeYear = true; }
+    
     beginDate = ee.Date(beginDate);
-    var year = beginDate.get('year');
-    var diff = beginDate.difference(ee.Date.fromYMD(year, 1, 1), 'day').add(1);
-    var d8   = diff.subtract(1).divide(8).floor().add(1).int();
+    var year  = beginDate.get('year');
+    var diff  = beginDate.difference(ee.Date.fromYMD(year, 1, 1), 'day').add(1);
+    var d8    = diff.subtract(1).divide(8).floor().add(1).int();
     
     year = year.format('%d'); //ee.String(year);
     d8   = d8.format('%02d'); //ee.String(d8);
+    d8   = ee.Algorithms.If(IncludeYear, year.cat("-").cat(d8), d8);
+    
     return ee.Image(img)
         .set('system:time_start', beginDate.millis())
         // .set('system:time_end', beginDate.advance(1, 'day').millis())
         .set('system:id', beginDate.format('yyyy-MM-dd'))
-        .set('d8', year.cat("-").cat(d8)); //add d8 for aggregated into 8days
+        .set('d8', d8); //add d8 for aggregated into 8days
 }
 
-function add_d8(img) {
-    return add_d8_date(img, img.get('system:time_start'));
+/**
+ * return a function used to add d8 property
+ *
+ * @param {boolean} IncludeYear [description]
+ */
+function add_d8(IncludeYear) {
+    if (typeof IncludeYear === 'undefined') { IncludeYear = true; }
+    return function(img){
+        return add_d8_date(img, img.get('system:time_start'), IncludeYear);   
+    };
 }
 
 function dailyImgIters(beginDate, endDate){
@@ -225,8 +234,8 @@ exports = {
     hour3Todaily        : hour3Todaily, 
     aggregate_prop      : aggregate_prop,
     linearTrend         : linearTrend,
+    imgcol_trend        : imgcol_trend,
     createConstantBand  : createConstantBand,
     imgcol_addSeasonProb: imgcol_addSeasonProb,
-    get_trend           : get_trend,
     imgcol_last         : imgcol_last,
 };
