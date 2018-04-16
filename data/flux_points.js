@@ -1,7 +1,7 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var points = ee.FeatureCollection("users/kongdd/shp/flux-212");
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
-// var pkg_export = require('users/kongdd/public:data/flux_points.js');
+// var points = require('users/kongdd/public:data/flux_points.js').points;
 points     = points.select(['site']); // reduce the export data size, only one band left
 
 /** 1. Change points system:index, has to convert to list first. */

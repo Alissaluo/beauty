@@ -1,4 +1,5 @@
 //var pkg_smooth     = require('users/kongdd/public:Math/pkg_smooth.js')
+var pkg_trend = require('users/kongdd/public:Math/pkg_trend.js');
 
 function setweights(ImgCol, bound) {
     if (typeof bound === 'undefined') {
@@ -77,6 +78,97 @@ function modweight_bisquare_array(re) {
     w = w.expression('(re >= sc)*0 + (re < sc) * b()', { sc: sc, re:re.abs() });
     
     return w;
+}
+
+/** 
+ * [replace_mask description]
+ *
+ * img.where can't directy replace masked values
+ * @param  {[type]} img    [description]
+ * @param  {[type]} newimg [description]
+ * @return {[type]}        [description]
+ */
+function replace_mask(img, newimg) {
+    img = img.unmask(-999);
+    img = img.where(img.eq(-999), newimg);
+    img = img.updateMask(img.neq(-999));
+    return img;
+}
+
+/** all those interpolation functions are just designed for 8-day temporal scale */
+function historyInterp(imgcol, prop){
+    if (typeof prop === 'undefined') { prop = 'd8'; }
+    var imgcol_his = pkg_trend.aggregate_prop(imgcol, prop, 'median');
+    
+    var f = ee.Filter.equals({leftField:prop, rightField:prop});
+    var c = ee.Join.saveAll({matchesKey:'history', ordering:'system:time_start', ascending:true})
+        .apply(imgcol, imgcol_his, f);
+    
+    var interpolated = ee.ImageCollection(c.map(function(img) {
+        img = ee.Image(img);
+        var history = ee.Image(ee.List(img.get('history')).get(0));
+        var props   = img.propertyNames().remove('history');
+        img = img.set('history', null);
+        var interp  = replace_mask(img, history);
+        return interp;//.copyProperties(img, ['system:time_start', 'system:id', prop]);
+    }));
+    print(interpolated, 'interpolated');
+    return interpolated;
+}
+
+// good values are modified in the interp. Need to further constrain.
+function linearInterp(imgcol, frame){
+    if (typeof frame === 'undefined') { frame = 32; }
+    // var frame = 32;
+    var time   = 'system:time_start';
+    imgcol = imgcol.map(addTimeBand);
+    
+    // We'll look for all images up to 32 days away from the current image.
+    var maxDiff = ee.Filter.maxDifference(frame * (1000*60*60*24), time, null, time);
+    var cond    = {leftField:time, rightField:time};
+    
+    // Images after, sorted in descending order (so closest is last).
+    //var f1 = maxDiff.and(ee.Filter.lessThanOrEquals(time, null, time))
+    var f1 = ee.Filter.and(maxDiff, ee.Filter.lessThanOrEquals(cond));
+    var c1 = ee.Join.saveAll({matchesKey:'after', ordering:time, ascending:false})
+        .apply(imgcol, imgcol, f1);
+    
+    // Images before, sorted in ascending order (so closest is last).
+    //var f2 = maxDiff.and(ee.Filter.greaterThanOrEquals(time, null, time))
+    var f2 = ee.Filter.and(maxDiff, ee.Filter.greaterThanOrEquals(cond));
+    var c2 = ee.Join.saveAll({matchesKey:'before', ordering:time, ascending:true})
+        .apply(c1, imgcol, f2);
+    
+    // var img = ee.Image(c2.toList(1, 15).get(0));
+    // var mask   = img.select([0]).mask();
+    // Map.addLayer(img , {}, 'img');
+    // Map.addLayer(mask, {}, 'mask');
+    
+    var interpolated = ee.ImageCollection(c2.map(function(img) {
+        img = ee.Image(img);
+
+        var before = ee.ImageCollection.fromImages(ee.List(img.get('before'))).mosaic();
+        var after  = ee.ImageCollection.fromImages(ee.List(img.get('after'))).mosaic();
+        
+        img = img.set('before', null).set('after', null);
+        // constrain after or before no NA values, confirm linear Interp having result
+        before = replace_mask(before, after);
+        after  = replace_mask(after , before);
+        
+        // Compute the ratio between the image times.
+        var x1 = before.select('time').double();
+        var x2 = after.select('time').double();
+        var now = ee.Image.constant(img.date().millis()).double();
+        var ratio = now.subtract(x1).divide(x2.subtract(x1));  // this is zero anywhere x1 = x2
+        // Compute the interpolated image.
+        var interp = after.subtract(before).multiply(ratio).add(before);
+        // var mask   = img.select([0]).mask();
+        
+        interp = replace_mask(img, interp);
+        // Map.addLayer(interp, {}, 'interp');
+        return interp.copyProperties(img, ['system:time_start', 'system:id']);
+    }));
+    return interpolated;
 }
 
 exports = {
