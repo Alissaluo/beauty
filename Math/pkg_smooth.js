@@ -168,9 +168,10 @@ function linearInterp(imgcol, frame){
         var interp = after.subtract(before).multiply(ratio).add(before);
         // var mask   = img.select([0]).mask();
         
+        var qc = img.mask().not().rename('qc');
         interp = replace_mask(img, interp);
         // Map.addLayer(interp, {}, 'interp');
-        return interp.copyProperties(img, ['system:time_start', 'system:id']);
+        return interp.addBands(qc).copyProperties(img, ['system:time_start', 'system:id']);
     }));
     return interpolated;
 }

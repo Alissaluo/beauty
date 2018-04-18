@@ -198,34 +198,27 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs){
  * Fast export ImgCol to drive
  * 
  * @param {ImageCollection} ImgCol      The ImageCollection you want to export.
- * @param {ee.List}         daily_iters A date List object store the corresponding date of ImgCol.
+ * @param {ee.List}         dateList    A date List object store the corresponding date of ImgCol.
  *                                      ImageCollection also can be accept.              
  * @param {List}            range       [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15, 120, 40]
  * @param {float}           scale       cellsize in degree
  */
-function ExportImgCol(ImgCol, daily_iters, range, scale, drive, folder, crs){
-    // print(ImgCol, 'inside');
-    // ImgCol = ee.ImageCollection(ImgCol); //confirm variable type
-    if (typeof daily_iters === 'undefined'){
-        // If daily_iters was undefined, this function is low efficient.
+function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
+    if (typeof dateList === 'undefined'){
+        // If dateList was undefined, this function is low efficient.
         // toList is quite slow, often lead to time out
-        daily_iters = ImgCol.toList(ImgCol.size())
-            .map(function(img){
-                return ee.Date(ee.Image(img).get('system:time_start'));
-            });
-        // print('here', daily_iters);
+        var dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
+            .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
+        // print('here', dateList);
     }
     if (typeof drive === 'undefined') { drive = false;}
     if (typeof crs   === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
 
-    var dates = daily_iters.map(function(date){
-        return ee.Date(date).format('yyyy-MM-dd');
-    }).getInfo();
-    var n = dates.length; //JavaScript client object, print(n, typeof n);
+    var n = dateList.length; //JavaScript client object, print(n, typeof n);
     
     for (var i = 0; i < n; i++) {
         // var img  = ee.Image(colList.get(i));
-        var date = dates[i];
+        var date = dateList[i];
         var img  = ee.Image(ImgCol.filterDate(date).first()); 
         // var task = img.get('system:id');//.getInfo();
         var task = date;
