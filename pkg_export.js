@@ -165,6 +165,7 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs){
   var sizeX  = (range[2] - range[0]) / step;
   var sizeY  = (range[3] - range[1]) / step;
   var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
+  var crs_trans  = [scale, 0, -180, 0, -scale, 90];
 
   if (drive){
        Export.image.toDrive({
@@ -173,6 +174,7 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs){
           folder: folder,
           crs: crs,
           region: bounds,
+          // crsTransform: crs_trans,
           dimensions: dimensions,
           maxPixels: 1e13,
           skipEmptyTiles: true
@@ -189,8 +191,6 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs){
       });  
   }
 }
-
-
 
 /**
  * ExportImgCol
