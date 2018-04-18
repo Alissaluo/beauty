@@ -94,6 +94,11 @@ function replace_mask(img, newimg) {
     return img;
 }
 
+/** Interpolation not considering weights */
+var addTimeBand = function(image) {
+    return image.addBands(image.metadata('system:time_start').rename("time"));
+};
+
 /** all those interpolation functions are just designed for 8-day temporal scale */
 function historyInterp(imgcol, prop){
     if (typeof prop === 'undefined') { prop = 'd8'; }
@@ -178,4 +183,5 @@ exports = {
     replace_mask            : replace_mask,  
     historyInterp           : historyInterp,
     linearInterp            : linearInterp,  
+    addTimeBand             : addTimeBand,
 };
