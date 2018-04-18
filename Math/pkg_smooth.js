@@ -45,15 +45,6 @@ function setweights(ImgCol, bound) {
   * @return {Array}            new weights according to residuals.
   */ 
 function modweight_bisquare(re) {
-    // var bandNames = ee.Image(yPred.first()).bandNames();
-    // var lastband  = bandNames.get(-1);
-    // // system:index was combined and can't change. Unknown reason.
-    // var re = yPred.map(function(img) {
-    //     // first band is original VI
-    //     // the last band is smoothed time-series after iters loop
-    //     return img.select([0]).subtract(img.select([lastband])).abs()
-    //         .copyProperties(img, ['system:id', 'system:index', 'system:time_start']);
-    // });
     re = ee.ImageCollection(re);
     var median = re.reduce(ee.Reducer.percentile([50])); 
     var sc = median.multiply(6.0);
@@ -63,21 +54,29 @@ function modweight_bisquare(re) {
         return img.where(res.gte(sc), 0.0)
             .copyProperties(res, ['system:id', 'system:index', 'system:time_start']);
     });
-    w = w.toArray().toArray(1);
+    w = w.toArray();//.toArray(1)
     return w;
 }
 
 /**
  * Reference: https://cn.mathworks.com/help/curvefit/smoothing-data.html#bq_6ys3-3.
  */
-function modweight_bisquare_array(re) {
+function modweight_bisquare_array(re, w) {
     var median = re.abs().arrayReduce(ee.Reducer.percentile([50]), [0]);
+    
     var sc = median.multiply(6.0).arrayProject([0]).arrayFlatten([['sc']]);
+    // Map.addLayer(re, {}, 're')
+    // Map.addLayer(sc, {}, 'median')
     
-    var w = re.expression('pow(1 - pow(b()/sc, 2), 2)', { sc: sc });
-    w = w.expression('(re >= sc)*0 + (re < sc) * b()', { sc: sc, re:re.abs() });
+    var w_new = re.expression('pow(1 - pow(b()/sc, 2), 2)', { sc: sc });
+        
+    if (typeof w !== 'undefined'){
+        w_new = w_new.expression('(re <  0) * b() + (re >= 0)*w' , { re:re, w:w });
+    }
+    w_new = w_new.expression('(re >= sc)*0 + (re < sc) * b()', { sc:sc, re:re.abs() });
+    // Map.addLayer(w, {}, 'inside w');
     
-    return w;
+    return w_new;
 }
 
 /** 
@@ -172,6 +171,11 @@ function linearInterp(imgcol, frame){
 }
 
 exports = {
-  setweights         :setweights,
-  modweight_bisquare :modweight_bisquare,
+    setweights              :setweights,
+    modweight_bisquare      : modweight_bisquare,
+    modweight_bisquare_array: modweight_bisquare_array,
+
+    replace_mask            : replace_mask,  
+    historyInterp           : historyInterp,
+    linearInterp            : linearInterp,  
 };
