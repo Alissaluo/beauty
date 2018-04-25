@@ -1,5 +1,6 @@
 // var pkg_main   = require('users/kongdd/public:pkg_main.js');
 var global_prop = ['system:id', 'system:time_start', 'system:time_end']; //, 'system:index'
+var points = require('users/kongdd/public:data/flux_points.js').points;
 
 var addYearProp = function(img) {
     return img.set('year', ee.Date(img.get('system:time_start')).get('year'));
