@@ -114,9 +114,9 @@ exports = {
     addYearProp     : addYearProp,
     addDateProp     : addDateProp,
     setImgProperties: setImgProperties,
-    imgRegion       ： imgRegion
+    imgRegion       : imgRegion,
     imgRegions      : imgRegions,
-    imgcolRegion    ： imgcolRegion,
+    imgcolRegion    : imgcolRegion,
     imgcolRegions   : imgcolRegions,
     array2imgcol    : array2imgcol,
 };
