@@ -1,3 +1,7 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imgcol_lai_raw = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/LAI_whit_4d"),
+    imgcol_lai_org = ee.ImageCollection("MODIS/006/MCD15A3H");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 // var pkg_main   = require('users/kongdd/public:pkg_main.js');
 var global_prop = ['system:id', 'system:time_start', 'system:time_end']; //, 'system:index'
 var points = require('users/kongdd/public:data/flux_points.js').points;
@@ -8,6 +12,52 @@ var addYearProp = function(img) {
 var addDateProp = function(img) {
     return img.set('date', ee.Date(img.get('system:time_start')).format('yyyy-MM-dd'));
 };
+
+var img = ee.Image(imgcol_lai_raw.first());
+
+/** multiple bands convert to imgcol */
+function bandsToImgCol(img){
+    img = ee.Image(img);
+    var names = img.bandNames();
+    var n     = names.size();
+    
+    var imgcol = ee.ImageCollection(names.map(function(name){
+        var date = ee.Date.parse('YYYY_MM_dd', ee.String(name).slice(1, 11));
+        return img.select([name], ['Lai'])
+            .set('system:time_start', date.millis())
+            // .set('system:time_end', beginDate.advance(1, 'day').millis())
+            .set('system:id', date.format('yyyy_MM_dd'))
+            .set('system:index', date.format('yyyy_MM_dd'));
+    }));
+    return imgcol;
+}
+
+var imgcol_lai;
+
+// imgcol_lai_raw = imgcol_lai_raw.toList(imgcol_lai_raw.size());
+imgcol_lai = imgcol_lai_raw.map(bandsToImgCol);
+// print(imgcol_lai.flatten(), 'imgcol_lai raw');
+
+imgcol_lai = ee.ImageCollection(imgcol_lai.flatten());
+// imgcol_lai = imgcol_lai.toList(imgcol_lai)
+
+var pkg_join   = require('users/kongdd/public:pkg_join.js');
+imgcol_lai_org = imgcol_lai_org.select('Lai').limit(92*4);
+
+var imgcol = pkg_join.SaveBest(imgcol_lai_org, imgcol_lai);
+imgcol = imgcol.select([0, 1], ['Lai', 'smoothed']);
+
+var n = imgcol_lai.size();
+// .map(function(x){
+//     return ee.Date.parse('YYYY_MM_dd', ee.String(x).slice(1, 11));
+// });
+print(imgcol_lai, 'imgcol_lai');
+var imgcol_lai_org = imgcol_lai_org.select('Lai').limit(n);
+
+// var imgcol = imgcol_lai.combine(imgcol_lai_org);
+print(imgcol);
+// print(names, n, imgcol);
+Map.addLayer(imgcol, {}, 'lai');
 
 /**
  * setImgProperties 
