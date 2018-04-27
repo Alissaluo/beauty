@@ -1,5 +1,10 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imgcol_lai_raw = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/LAI_whit_4d"),
+    imgcol_lai_org = ee.ImageCollection("MODIS/006/MCD15A3H");
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 // var pkg_main   = require('users/kongdd/public:pkg_main.js');
 var global_prop = ['system:id', 'system:time_start', 'system:time_end']; //, 'system:index'
+var points = require('users/kongdd/public:data/flux_points.js').points;
 
 var addYearProp = function(img) {
     return img.set('year', ee.Date(img.get('system:time_start')).get('year'));
@@ -109,14 +114,31 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
     // return pkg_main.setImgProperties(img, beginDate);  
 }
 
+/** multiple bands image convert to imgcol */
+function bandsToImgCol(img){
+    img = ee.Image(img);
+    var names = img.bandNames();
+    var n     = names.size();
+    
+    var imgcol = ee.ImageCollection(names.map(function(name){
+        var date = ee.Date.parse('YYYY_MM_dd', ee.String(name).slice(1, 11));
+        return img.select([name], ['Lai'])
+            .set('system:time_start', date.millis())
+            // .set('system:time_end', beginDate.advance(1, 'day').millis())
+            .set('system:id', date.format('yyyy_MM_dd'))
+            .set('system:index', date.format('yyyy_MM_dd'));
+    }));
+    return imgcol;
+}
 exports = {
     global_prop     : global_prop,
     addYearProp     : addYearProp,
     addDateProp     : addDateProp,
     setImgProperties: setImgProperties,
-    imgRegion       ： imgRegion
+    imgRegion       : imgRegion,
     imgRegions      : imgRegions,
-    imgcolRegion    ： imgcolRegion,
+    imgcolRegion    : imgcolRegion,
     imgcolRegions   : imgcolRegions,
     array2imgcol    : array2imgcol,
+    bandsToImgCol   : bandsToImgCol,
 };
