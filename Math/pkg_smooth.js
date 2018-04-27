@@ -95,32 +95,13 @@ function replace_mask(img, newimg) {
 }
 
 /** Interpolation not considering weights */
-var addTimeBand = function(image) {
-    return image.addBands(image.metadata('system:time_start').rename("time"));
+var addTimeBand = function(img) {
+    /** make sure mask is consistent */
+    var mask = img.mask();
+    var time = img.metadata('system:time_start').rename("time").mask(mask);
+    return img.addBands(time);
 };
 
-/** all those interpolation functions are just designed for 8-day temporal scale */
-function historyInterp(imgcol, prop){
-    if (typeof prop === 'undefined') { prop = 'd8'; }
-    var imgcol_his = pkg_trend.aggregate_prop(imgcol, prop, 'median');
-    
-    var f = ee.Filter.equals({leftField:prop, rightField:prop});
-    var c = ee.Join.saveAll({matchesKey:'history', ordering:'system:time_start', ascending:true})
-        .apply(imgcol, imgcol_his, f);
-    
-    var interpolated = ee.ImageCollection(c.map(function(img) {
-        img = ee.Image(img);
-        var history = ee.Image(ee.List(img.get('history')).get(0));
-        var props   = img.propertyNames().remove('history');
-        img = img.set('history', null);
-        var interp  = replace_mask(img, history);
-        return interp;//.copyProperties(img, ['system:time_start', 'system:id', prop]);
-    }));
-    print(interpolated, 'interpolated');
-    return interpolated;
-}
-
-// good values are modified in the interp. Need to further constrain.
 function linearInterp(imgcol, frame){
     if (typeof frame === 'undefined') { frame = 32; }
     // var frame = 32;
@@ -143,6 +124,7 @@ function linearInterp(imgcol, frame){
     var c2 = ee.Join.saveAll({matchesKey:'before', ordering:time, ascending:true})
         .apply(c1, imgcol, f2);
     
+    // print(c2, 'c2');
     // var img = ee.Image(c2.toList(1, 15).get(0));
     // var mask   = img.select([0]).mask();
     // Map.addLayer(img , {}, 'img');
@@ -165,6 +147,10 @@ function linearInterp(imgcol, frame){
         var now = ee.Image.constant(img.date().millis()).double();
         var ratio = now.subtract(x1).divide(x2.subtract(x1));  // this is zero anywhere x1 = x2
         // Compute the interpolated image.
+        before = before.select(0); //remove time band now;
+        after  = after.select(0);
+        img    = img.select(0); 
+        
         var interp = after.subtract(before).multiply(ratio).add(before);
         // var mask   = img.select([0]).mask();
         
@@ -173,6 +159,34 @@ function linearInterp(imgcol, frame){
         // Map.addLayer(interp, {}, 'interp');
         return interp.addBands(qc).copyProperties(img, ['system:time_start', 'system:id']);
     }));
+    return interpolated;
+}
+
+/** all those interpolation functions are just designed for 8-day temporal scale */
+function historyInterp(imgcol, imgcol_his_mean, prop){
+    if (typeof prop === 'undefined') { prop = 'd8'; }
+    // var imgcol_his_mean = pkg_trend.aggregate_prop(imgcol.select(0), prop, 'median');
+    
+    var f = ee.Filter.equals({leftField:prop, rightField:prop});
+    var c = ee.Join.saveAll({matchesKey:'history', ordering:'system:time_start', ascending:true})
+        .apply(imgcol, imgcol_his_mean, f);
+    // print(c);
+    
+    var interpolated = ee.ImageCollection(c.map(function(img) {
+        img = ee.Image(img);
+        
+        var history = ee.Image(ee.List(img.get('history')).get(0));
+        var props   = img.propertyNames().remove('history');
+        img  = img.set('history', null);
+        
+        var qc = img.select('qc');
+        img    = img.select(0);
+        
+        qc = qc.add(img.mask().not()); // 0:good value, 1:linear interp; 2:his interp
+        var interp  = replace_mask(img, history);
+        return interp.addBands(qc);//.copyProperties(img, ['system:time_start', 'system:id', prop]);
+    }));
+    // print(interpolated, 'interpolated');
     return interpolated;
 }
 
