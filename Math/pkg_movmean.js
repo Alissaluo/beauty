@@ -129,25 +129,25 @@ exports = {
 // debug();
 function debug(){
     // test movmean_lst function through LAI ImgCol
-    var pkg_LAI    = require('users/kongdd/public:data/ImgCol_MODIS_LAI.js');
-    var pkg_export = require('users/kongdd/public:pkg_export.js');
+    // var pkg_LAI    = require('users/kongdd/public:data/ImgCol_MODIS_LAI.js');
+    // var pkg_export = require('users/kongdd/public:pkg_export.js');
     
-    var ImgCol = pkg_LAI.LAI_4d_mask.limit(92);
+    // var ImgCol = pkg_LAI.LAI_4d_mask.limit(92);
     
-    var n = ImgCol.size(),
-    win_back = 7,
-    win_forw = 6;
-    var ImgCol_mov = movmean_lst(ImgCol, n, win_back, win_forw);
+    // var n = ImgCol.size(),
+    // win_back = 7,
+    // win_forw = 6;
+    // var ImgCol_mov = movmean_lst(ImgCol, n, win_back, win_forw);
     
-    Map.addLayer(ImgCol_mov);
+    // Map.addLayer(ImgCol_mov);
     
-    // pkg_export.ExportImg_deg(img, range, 'PML_global_test2002_120deg', 1/12);
-    print('Running here ...');
-    var daily_iters = ImgCol.toList(ImgCol.size()).map(function(img){
-        return ee.Date(ee.Image(img).get('system:time_start'));
-    });
-    var prop = ImgCol.get('system:time_start');
-    // print(prop, daily_iters);
+    // // pkg_export.ExportImg_deg(img, range, 'PML_global_test2002_120deg', 1/12);
+    // print('Running here ...');
+    // var daily_iters = ImgCol.toList(ImgCol.size()).map(function(img){
+    //     return ee.Date(ee.Image(img).get('system:time_start'));
+    // });
+    // var prop = ImgCol.get('system:time_start');
+    // // print(prop, daily_iters);
     
-    pkg_export.ExportImgCol(ImgCol_mov, daily_iters, exports.global_range, 1 / 12);
+    // pkg_export.ExportImgCol(ImgCol_mov, daily_iters, exports.global_range, 1 / 12);
 }

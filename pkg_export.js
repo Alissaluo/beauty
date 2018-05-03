@@ -16,7 +16,7 @@
  * var export_data = ImgCol.map(mh_BufferPoints(points, 250, reducer, 250));
  */
 // ImgCol system:index need to be fixed
-function mh_BufferPoints(points_buf, reducer, scale, list) {
+function mh_Buffer(points_buf, reducer, scale, list) {
     // var index  = img.get('system:index');
     if (list){
         // If don't use buffer, the original reducer works.
@@ -45,7 +45,7 @@ function mh_BufferPoints(points_buf, reducer, scale, list) {
     }
 }
 
-function BufferPoints(ImgCol, points, distance, reducer, scale, list, save, file, folder){
+function clipImgCol(ImgCol, points, distance, reducer, scale, list, save, file, folder){
     if (typeof distance === 'undefined') distance = 0;   
     if (typeof list     === 'undefined') list = false;
     if (typeof scale    === 'undefined') scale = 500;
@@ -60,7 +60,7 @@ function BufferPoints(ImgCol, points, distance, reducer, scale, list, save, file
         points_buf = points;
     }
     
-    var export_data = ImgCol.map(mh_BufferPoints(points_buf, reducer, scale, list), true).flatten();
+    var export_data = ImgCol.map(mh_Buffer(points_buf, reducer, scale, list), true).flatten();
     Export_Table(export_data, save, file, folder);
 }
 
@@ -76,8 +76,8 @@ function spClipImgCol(ImgCol, points, scale, name){
 }
 
 /**
- * Clip ImageCollection data by points through reduceRegions, and points 
- * was global variable.
+ * Clip ImageCollection data by points through reduceRegions, and points was
+ * global variable.
  *
  * @param  {ee.Image} Img Image to export data
  * @return {FeatureCollection}     [description]
@@ -118,18 +118,22 @@ function fetchTable_v2(img) {
  * @return {FeatureCollection} If save = false, will return FeatureCollection.
  * Otherwise, none will be return. 
  */
-function Export_Table(export_data, save, file, folder) {
-    if (typeof save   === 'undefined') save   = false;
-    if (typeof folder === 'undefined') folder = "";
+function Export_Table(export_data, save, file, folder, fileFormat) {
+    if (typeof save       === 'undefined') save       = false;
+    if (typeof folder     === 'undefined') folder     = "";
+    if (typeof fileFormat === 'undefined') fileFormat = "GeoJSON";
     
+    // export params
+    var params = {
+        collection  : export_data, //.flatten(),
+        description : file,
+        folder      : folder,
+        fileFormat  : 'GeoJSON' //GeoJSON, CSV
+    }
+
     // If save, then export to drive, else print in the console
     if (save) {
-        Export.table.toDrive({
-            collection : export_data, //.flatten(),
-            description: file,
-            folder     : folder,
-            fileFormat : 'GeoJSON' //GeoJSON, CSV
-        });
+        Export.table.toDrive(params);
     } else {
         print(file, export_data);
     }
@@ -144,77 +148,78 @@ function clip(ImgCol, poly){
 /**
  * ExportImage_deg
  *
- * @param {[type]} Image [description]
- * @param {[type]} range [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15, 120, 40]
+ * @param {ee.Image} Image [description]
+ * @param {[type]} range [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15,
+ * 120, 40]
+ *
  * @param {[type]} task  [description]
  * @param {[type]} scale [description]
  */
-function ExportImg_deg(Image, range, task, scale, drive, folder, crs){
-  // Image = Image.select(['slope', 'tval']);
-  // define export region
-  if (typeof range  === 'undefined') {range = [-180, -70, 180, 90];}
-  if (typeof drive  === 'undefined') {drive = false;}
-  if (typeof folder === 'undefined') {
-    folder = drive ? 'PML test' : 'PML_8km_daily_LU_dynamic';
-  }
-  if (typeof crs === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
-   
-  var bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
-  
-  var step   = scale; // degrees
-  var sizeX  = (range[2] - range[0]) / step;
-  var sizeY  = (range[3] - range[1]) / step;
-  var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
-  var crs_trans  = [scale, 0, -180, 0, -scale, 90];
+function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans){
+    var bounds; // define export region
 
-  if (drive){
-       Export.image.toDrive({
-          image: Image,
-          description: task,
-          folder: folder,
-          crs: crs,
-          region: bounds,
-          // crsTransform: crs_trans,
-          dimensions: dimensions,
-          maxPixels: 1e13,
-          skipEmptyTiles: true
-      });  
-  }else{
-      Export.image.toAsset({
-          image: Image,
-          description: task,
-          assetId: folder.concat('/').concat(task), //projects/pml_evapotranspiration/
-          crs: crs,
-          region: bounds,
-          dimensions: dimensions,
-          maxPixels: 1e13
-      });  
-  }
+    if (typeof range  === 'undefined') { range  = [-180, -70, 180, 90];}
+    if (typeof drive  === 'undefined') { drive  = false;}
+    if (typeof folder === 'undefined') { folder = ''; }
+    if (typeof crs    === 'undefined') { crs    = 'SR-ORG:6974';} //'EPSG:4326'
+    if (typeof crs_trans === 'undefined'){
+        bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
+    }
+
+    var step   = scale; // degrees
+    var sizeX  = (range[2] - range[0]) / step;
+    var sizeY  = (range[3] - range[1]) / step;
+    var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
+
+    // var crs_trans  = [scale, 0, -180, 0, -scale, 90];
+    var params = {
+        image        : Image,
+        description  : task,
+        crs          : crs,
+        crsTransform : crs_trans,
+        region       : bounds,
+        dimensions   : dimensions,
+        maxPixels    : 1e13
+    };
+           
+    if (drive){
+        params.folder         = folder;
+        params.skipEmptyTiles = true;
+        Export.image.toDrive(params);  
+    }else{
+        params.assetId = folder.concat('/').concat(task), //projects/pml_evapotranspiration/;
+        Export.image.toAsset(params);  
+    }
+    // print(params);
 }
 
 /**
  * ExportImgCol
  *
  * Fast export ImgCol to drive
- * 
+ *
  * @param {ImageCollection} ImgCol      The ImageCollection you want to export.
- * @param {ee.List}         dateList    A date List object store the corresponding date of ImgCol.
- *                                      ImageCollection also can be accept.              
- * @param {List}            range       [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15, 120, 40]
- * @param {float}           scale       cellsize in degree
+ * @param {ee.List}         dateList    A date List object store the
+ * corresponding date of ImgCol. ImageCollection also can be accept.
+ *
+ * @param {List}            range       [lon_min, lat_min, lon_max, lat_max],
+ * e.g. [70, 15, 120, 40]
+ *
+ * @param {float}           scale       cellsize in degree 
  */
 function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
     if (typeof dateList === 'undefined'){
-        // If dateList was undefined, this function is low efficient.
-        // toList is quite slow, often lead to time out
-        var dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
+        /** 
+         * If dateList was undefined, this function is low efficient.
+         * ee.ImageCollection.toList() is quite slow, often lead to time out.
+         */
+        dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
             .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
-        // print('here', dateList);
     }
     if (typeof drive === 'undefined') { drive = false;}
     if (typeof crs   === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
 
-    var n = dateList.length; //JavaScript client object, print(n, typeof n);
+    var n = dateList.length;
     
     for (var i = 0; i < n; i++) {
         // var img  = ee.Image(colList.get(i));
@@ -223,33 +228,19 @@ function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
         // var task = img.get('system:id');//.getInfo();
         var task = date;
         print(task);
-        //drive = false, will export to asset
         ExportImg_deg(img, range, task, scale, drive, folder, crs); 
     }
 }
 
-function ExportImgCol_lst(ImgCol, range, scale){
-  var n = ImgCol.size().getInfo();
-  var colList = ImgCol.toList(n);
-  // print(n, typeof n);
-  for (var i = 0; i < n; i++) {
-      var img  = ee.Image(colList.get(i));
-      var task = img.get('system:id').getInfo();
-      //drive = true, save into drive
-      ExportImg_deg(img, range, task, scale, true); 
-  }
-}
-
 exports = {
-  mh_BufferPoints  :mh_BufferPoints,    // for img
-  BufferPoints     :BufferPoints,       // for ImgCol
+  mh_Buffer        :mh_Buffer,    // for img
+  clipImgCol       :clipImgCol,       // for ImgCol
   fetchTable_v1    :fetchTable_v1,
   fetchTable_v2    :fetchTable_v2,
   ExportImg_deg    :ExportImg_deg,
   Export_Table     :Export_Table,
   clip             :clip,
   ExportImgCol     :ExportImgCol,
-  ExportImgCol_lst :ExportImgCol_lst,
 
   global_range     :[-180, -60, 180, 85], //[long_min, lat_min, long_max, lat_max]
   TP_range         :[73, 25, 105, 40],
