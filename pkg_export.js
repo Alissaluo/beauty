@@ -2,9 +2,9 @@
 
 /**
  * Clip image data of points buffer
- * 
- * map function handle for BufferPoints, return a function of img 
- * 
+ *
+ * map function handle for BufferPoints, return a function of img
+ *
  * @param  {[type]} points   [description]
  * @param  {[type]} distance [description]
  * @param  {[type]} reducer  [description]
@@ -12,18 +12,17 @@
  * @param  {[type]} list     [description]
  * @return {[type]}          [description]
  * 
- * @example:
- * var export_data = ImgCol.map(mh_BufferPoints(points, 250, reducer, 250));
+ * @examples
+ * var export_data = ImgCol.map(mh_BufferPoints(points, 250, reducer,
+ * 250));
  */
-// ImgCol system:index need to be fixed
-function mh_Buffer(points_buf, reducer, scale, list) {
-    // var index  = img.get('system:index');
+function mh_Buffer(features, reducer, scale, list) {
     if (list){
-        // If don't use buffer, the original reducer works.
-        // And remove points geometry information
+        // ee.Reducer.toList() result contains geometry, need to remove it.
+        // features' band properties have already could distinguish each other.
         return function(img){
             return img.reduceRegions({ 
-                collection: points_buf, scale: scale, reducer: reducer, tileScale: 16 
+                collection: features, scale: scale, reducer: reducer, tileScale: 16 
             })
             .map(function(f){ 
                 return ee.Feature(null).copyProperties(f)
@@ -33,34 +32,46 @@ function mh_Buffer(points_buf, reducer, scale, list) {
     }else{
         return function(img){
             var data = img.reduceRegions({ 
-                collection: points_buf, scale: scale, reducer: reducer, tileScale: 16
-            }).map(function(f){ return f.get('features'); }).flatten(); //cliped data are in featureCollections
-            // 1. have converted list into featurecollections
-            // 2. just for PML modis and gldas combine output
-            
-            // data = ee.Algorithms.If(list, data, data.map(function(f){ return f.get('features'); }));
-            // data = ee.Feature(ee.FeatureCollection(data).flatten());//reducer return collection for every feature
+                collection: features, scale: scale, reducer: reducer, tileScale: 16
+            })
+            .map(function(f){ return f.get('features'); }).flatten(); 
+            // `ee.Reducer.toCollection` has no feature geometry, and cliped 
+            // data are in FeatureCollection.
             return data;
         };
     }
 }
 
-function clipImgCol(ImgCol, points, distance, reducer, scale, list, save, file, folder){
+/**
+ * Clip ImageCollection by points or polygons
+ *
+ * @param  {ee.ImageCollection}   ImgCol   The ImageCollection you want to clip
+ * @param  {ee.FeatureCollection} features The FeatureCollection used to clip
+ * `ImgCol`, can be point or polygon FeatureCollection.
+ * @param  {Integer} distance If `distance` > 0, a buffer with the ridius of
+ * `distance` will be applied to `features`.
+ * @param  {ee.Reducer} reducer e.g. ee.Reducer.toList(), ee.Reducer.mean(), ee.Reducer.first(), ...
+ * @param  {Integer} scale    [description]
+ * @param  {Boolean} list     [description]
+ * @param  {Boolean} save     [description]
+ * @param  {String}  file     [description]
+ * @param  {Boolean} folder   [description]
+ * @return {NULL}          [description]
+ */
+function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file, folder){
     if (typeof distance === 'undefined') distance = 0;   
-    if (typeof list     === 'undefined') list = false;
-    if (typeof scale    === 'undefined') scale = 500;
+    if (typeof list     === 'undefined') list     = false;
+    if (typeof scale    === 'undefined') scale    = 500;
     
-    // ee.Reducer.toList(), ee.Reducer.mean(), ee.Reducer.first()
-    var points_buf;
+    // If distance > 0, buffer will be applied to `features`
     if (distance > 0){
-        reducer = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames()); 
-        points_buf = points.map(function(f) { return f.buffer(distance);});
+        reducer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames()); 
+        features = features.map(function(f) { return f.buffer(distance);});
     }else {
         if(typeof reducer  === 'undefined') reducer = ee.Reducer.first();//mean();
-        points_buf = points;
     }
     
-    var export_data = ImgCol.map(mh_Buffer(points_buf, reducer, scale, list), true).flatten();
+    var export_data = ImgCol.map(mh_Buffer(features, reducer, scale, list), true).flatten();
     Export_Table(export_data, save, file, folder);
 }
 
