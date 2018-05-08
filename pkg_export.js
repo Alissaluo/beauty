@@ -140,7 +140,7 @@ function Export_Table(export_data, save, file, folder, fileFormat) {
         collection  : export_data, //.flatten(),
         description : file,
         folder      : folder,
-        fileFormat  : 'GeoJSON' //GeoJSON, CSV
+        fileFormat  : fileFormat //GeoJSON, CSV
     }
 
     // If save, then export to drive, else print in the console
