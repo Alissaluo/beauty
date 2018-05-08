@@ -58,11 +58,12 @@ function mh_Buffer(features, reducer, scale, list) {
  * @param  {Boolean} folder   [description]
  * @return {NULL}          [description]
  */
-function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file, folder){
-    if (typeof distance === 'undefined') distance = 0;   
-    if (typeof list     === 'undefined') list     = false;
-    if (typeof scale    === 'undefined') scale    = 500;
-    
+function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file, folder, fileFormat){
+    if (typeof distance   === 'undefined') distance = 0;   
+    if (typeof list       === 'undefined') list     = false;
+    if (typeof scale      === 'undefined') scale    = 500;
+    if (typeof fileFormat === 'undefined') fileFormat = "GeoJSON";
+
     // If distance > 0, buffer will be applied to `features`
     if (distance > 0){
         reducer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames()); 
@@ -72,7 +73,7 @@ function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file
     }
     
     var export_data = ImgCol.map(mh_Buffer(features, reducer, scale, list), true).flatten();
-    Export_Table(export_data, save, file, folder);
+    Export_Table(export_data, save, file, folder, fileFormat);
 }
 
 function spClipImgCol(ImgCol, points, scale, name){
