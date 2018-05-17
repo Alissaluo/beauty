@@ -9,7 +9,7 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 /** clip points buffering data */
 var pkg_export = require('users/kongdd/public:pkg_export.js');
-var points     = require('users/kongdd/pkgs:data/flux_points.js').points;
+var points = require('users/kongdd/public:data/flux_points.js').points;
 // print(points);
 // points = points.filter(ee.Filter.inList('site', ['DE-SfN', 'CH-Fru'])); 
 

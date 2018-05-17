@@ -160,12 +160,18 @@ function clip(ImgCol, poly){
 /**
  * ExportImage_deg
  *
- * @param {ee.Image} Image [description]
- * @param {[type]} range [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15,
+ * @param {ee.Image} Image     [description]
+ * @param {[type]} range     [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15,
  * 120, 40]
- *
- * @param {[type]} task  [description]
- * @param {[type]} scale [description]
+ * @param {[type]} task      [description]
+ * @param {[type]} scale     [description]
+ * @param {[type]} drive     [description]
+ * @param {[type]} folder    [description]
+ * @param {[type]} crs       [description]
+ * @param {[type]} crs_trans [description]
+ * 
+ * @example
+ * ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
  */
 function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans){
     var bounds; // define export region

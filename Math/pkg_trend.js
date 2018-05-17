@@ -100,35 +100,37 @@ function addSeasonProb(img, pheno){
         .set('YearMonth', date.format('YYYY-MM')); //seasons.get(month.subtract(1))
 }
 
-/** add d8 prop to every img */
-function add_d8_date(img, beginDate, IncludeYear){
+/** add dn prop to every img */
+function add_dn_date(img, beginDate, IncludeYear, n){
     if (typeof IncludeYear === 'undefined') { IncludeYear = true; }
-    
+    if (typeof n === 'undefined') { n = 8; }
+
     beginDate = ee.Date(beginDate);
     var year  = beginDate.get('year');
     var diff  = beginDate.difference(ee.Date.fromYMD(year, 1, 1), 'day').add(1);
-    var d8    = diff.subtract(1).divide(8).floor().add(1).int();
+    var dn    = diff.subtract(1).divide(n).floor().add(1).int();
     
     year = year.format('%d'); //ee.String(year);
-    d8   = d8.format('%02d'); //ee.String(d8);
-    d8   = ee.Algorithms.If(IncludeYear, year.cat("-").cat(d8), d8);
+    dn   = dn.format('%02d'); //ee.String(dn);
+    dn   = ee.Algorithms.If(IncludeYear, year.cat("-").cat(dn), dn);
     
     return ee.Image(img)
         .set('system:time_start', beginDate.millis())
         // .set('system:time_end', beginDate.advance(1, 'day').millis())
         .set('system:id', beginDate.format('yyyy-MM-dd'))
-        .set('d8', d8); //add d8 for aggregated into 8days
+        .set('dn', dn); //add dn for aggregated into 8days
 }
 
 /**
- * return a function used to add d8 property
+ * return a function used to add dn property
  *
  * @param {boolean} IncludeYear [description]
  */
-function add_d8(IncludeYear) {
+function add_dn(IncludeYear, n) {
     if (typeof IncludeYear === 'undefined') { IncludeYear = true; }
+    if (typeof n === 'undefined') { n = 8; }
     return function(img){
-        return add_d8_date(img, img.get('system:time_start'), IncludeYear);   
+        return add_dn_date(img, img.get('system:time_start'), IncludeYear, n);   
     };
 }
 
@@ -138,7 +140,7 @@ function dailyImgIters(beginDate, endDate){
     // var days = daily_iters.length(); 
     /** ImgCols Iters used to select the nearest Imgs */
     var dailyImg_iters = daily_iters.map(function(beginDate){
-        return add_d8_date(ee.Image(0), beginDate);
+        return add_dn_date(ee.Image(0), beginDate);
     });
     return dailyImg_iters;
 }
@@ -165,7 +167,7 @@ function hour3Todaily(ImgCol, dailyImg_iters, reducer) {
             img = ee.Image(img);
             var imgcol = ee.ImageCollection.fromImages(img.get('matches')); //.fromImages
             return imgcol.reduce(reducer)
-                .copyProperties(img, ['system:time_start', 'system:id', 'd8']);
+                .copyProperties(img, ['system:time_start', 'system:id', 'dn']);
         });
     return ee.ImageCollection(ImgCol_raw);
 }
@@ -211,7 +213,7 @@ function aggregate_prop(ImgCol, prop, reducer, delta){
         
         var res = ee.Algorithms.If(delta, last.subtract(first), imgcol.reduce(reducer))
         return ee.Image(res)
-            .copyProperties(ee.Image(imgcol.first()), ['Year', 'YearStr', 'YearMonth', 'Season', 'd8', 'system:time_start'])
+            .copyProperties(ee.Image(imgcol.first()), ['Year', 'YearStr', 'YearMonth', 'Season', 'dn', 'system:time_start'])
             .copyProperties(img, ['system:id', prop]);
     });
     return ee.ImageCollection(ImgCol_new);
@@ -229,8 +231,8 @@ function showdata(ImgCol) {
 exports = {
     showdata            : showdata,
     addSeasonProb       : addSeasonProb,
-    add_d8_date         : add_d8_date,
-    add_d8              : add_d8,
+    add_dn_date         : add_dn_date,
+    add_dn              : add_dn,
     hour3Todaily        : hour3Todaily, 
     aggregate_prop      : aggregate_prop,
     linearTrend         : linearTrend,

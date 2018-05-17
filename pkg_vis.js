@@ -11,6 +11,10 @@
  * @param  {[type]} name      [description]
  * @param  {[type]} region    [description]
  * @return {[type]}           [description]
+ *
+ * @example
+ * Map.add(ui.Label('text'));
+ * pkg_vis.series(imgcol, {}, 'bandname', region, label);
  */
 function series(ImgCol, vis, name, region, label) {
     var img = ee.Image(ImgCol.first());
