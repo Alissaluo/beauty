@@ -76,48 +76,17 @@ function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file
     Export_Table(export_data, save, file, folder, fileFormat);
 }
 
-function spClipImgCol(ImgCol, points, scale, name){
+function spClipImgCol(ImgCol, points, scale, name, fileFormat){
     var dists = [0, 1, 2]; //, 1000 
     ImgCol = ee.ImageCollection(ImgCol);
     var dist;
     for(var i = 0; i < dists.length; i++){
         dist = dists[i]*scale;
         file = 'fluxsites_'.concat(name).concat('_').concat(dist).concat('m_buffer');
-        BufferPoints(ImgCol, points, dist, reducer, scale, list, save, file, folder);
+        BufferPoints(ImgCol, points, dist, reducer, scale, list, save, file, folder, fileFormat);
     }  
 }
 
-/**
- * Clip ImageCollection data by points through reduceRegions, and points was
- * global variable.
- *
- * @param  {ee.Image} Img Image to export data
- * @return {FeatureCollection}     [description]
- */
-function fetchTable_v1(img) {
-    var id = Img.get('system:id');
-    var featureCol = img.reduceRegions({ collection: points, reducer: ee.Reducer.first(), scale: 500, tileScale: 16 })
-        .map(function(feature) {
-            return ee.Feature(null).copyProperties(feature)
-                .set('system:id', id);
-        });
-    return ee.FeatureCollection(featureCol);
-}
-
-/**
- * Clip ImageCollection data by points through reduceRegion. 
- */
-function fetchTable_v2(img) {
-    var id = img.get('system:index'); // or index
-    var featureCol = points.map(function(feature) {
-        feature = ee.Feature(feature);
-        var data = Img.reduceRegion(ee.Reducer.first(), feature.geometry(), 500);
-        return ee.Feature(null, data)
-            .set('system:id', id)
-            .set('site', feature.get('site'));
-    });
-    return ee.FeatureCollection(featureCol);
-}
 
 /**
  * Export_table
@@ -253,13 +222,11 @@ function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
 exports = {
   mh_Buffer        :mh_Buffer,    // for img
   clipImgCol       :clipImgCol,       // for ImgCol
-  fetchTable_v1    :fetchTable_v1,
-  fetchTable_v2    :fetchTable_v2,
   ExportImg_deg    :ExportImg_deg,
   Export_Table     :Export_Table,
   clip             :clip,
   ExportImgCol     :ExportImgCol,
 
-  global_range     :[-180, -60, 180, 85], //[long_min, lat_min, long_max, lat_max]
+  global_range     :[-180, -60, 180, 90], //[long_min, lat_min, long_max, lat_max]
   TP_range         :[73, 25, 105, 40],
 };
