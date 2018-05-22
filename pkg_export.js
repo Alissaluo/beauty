@@ -142,7 +142,7 @@ function clip(ImgCol, poly){
  * @example
  * ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
  */
-function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans){
+function ExportImg_deg(Image, range, task, cellsize, drive, folder, crs, crs_trans){
     var bounds; // define export region
 
     if (typeof range  === 'undefined') { range  = [-180, -70, 180, 90];}
@@ -153,12 +153,15 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
         bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
     }
 
-    var step   = scale; // degrees
-    var sizeX  = (range[2] - range[0]) / step;
-    var sizeY  = (range[3] - range[1]) / step;
+    var step   = cellsize; // degrees
+    var sizeX  = (range[2] - range[0]) / cellsize;
+    var sizeY  = (range[3] - range[1]) / cellsize;
+    sizeX = Math.round(sizeX);
+    sizeY = Math.round(sizeY);
+
     var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
 
-    // var crs_trans  = [scale, 0, -180, 0, -scale, 90];
+    // var crs_trans  = [cellsize, 0, -180, 0, -cellsize, 90];
     var params = {
         image        : Image,
         description  : task,
@@ -179,7 +182,6 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
     }
     // print(params);
 }
-
 /**
  * ExportImgCol
  *
@@ -192,9 +194,9 @@ function ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
  * @param {List}            range       [lon_min, lat_min, lon_max, lat_max],
  * e.g. [70, 15, 120, 40]
  *
- * @param {float}           scale       cellsize in degree 
+ * @param {float}           cellsize       cellsize in degree 
  */
-function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
+function ExportImgCol(ImgCol, dateList, range, cellsize, drive, folder, crs){
     if (typeof dateList === 'undefined'){
         /** 
          * If dateList was undefined, this function is low efficient.
@@ -215,7 +217,7 @@ function ExportImgCol(ImgCol, dateList, range, scale, drive, folder, crs){
         // var task = img.get('system:id');//.getInfo();
         var task = date;
         print(task);
-        ExportImg_deg(img, range, task, scale, drive, folder, crs); 
+        ExportImg_deg(img, range, task, cellsize, drive, folder, crs); 
     }
 }
 
