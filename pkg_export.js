@@ -142,11 +142,11 @@ function clip(ImgCol, poly){
  * @example
  * ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
  */
-function ExportImg_deg(Image, range, task, cellsize, drive, folder, crs, crs_trans){
+function ExportImg_deg(Image, range, task, cellsize, place, folder, crs, crs_trans){
     var bounds; // define export region
 
     if (typeof range  === 'undefined') { range  = [-180, -70, 180, 90];}
-    if (typeof drive  === 'undefined') { drive  = false;}
+    if (typeof place  === 'undefined') { place  = 'drive';}
     if (typeof folder === 'undefined') { folder = ''; }
     if (typeof crs    === 'undefined') { crs    = 'SR-ORG:6974';} //'EPSG:4326'
     if (typeof crs_trans === 'undefined'){
@@ -171,14 +171,25 @@ function ExportImg_deg(Image, range, task, cellsize, drive, folder, crs, crs_tra
         dimensions   : dimensions,
         maxPixels    : 1e13
     };
-           
-    if (drive){
-        params.folder         = folder;
-        params.skipEmptyTiles = true;
-        Export.image.toDrive(params);  
-    }else{
-        params.assetId = folder.concat('/').concat(task), //projects/pml_evapotranspiration/;
-        Export.image.toAsset(params);  
+
+    switch(place){
+        case 'asset':
+            params.assetId = folder.concat('/').concat(task), //projects/pml_evapotranspiration/;
+            Export.image.toAsset(params);  
+            break;
+    
+        case 'cloud':
+            params.bucket         = "gs://kongdd";
+            params.fileNamePrefix = folder;
+            params.skipEmptyTiles = true;
+            Export.image.toCloudStorage(params);
+            break;
+        
+        case 'drive':
+            params.folder         = folder;
+            params.skipEmptyTiles = true;
+            Export.image.toDrive(params);  
+            break;
     }
     // print(params);
 }
@@ -196,7 +207,7 @@ function ExportImg_deg(Image, range, task, cellsize, drive, folder, crs, crs_tra
  *
  * @param {float}           cellsize       cellsize in degree 
  */
-function ExportImgCol(ImgCol, dateList, range, cellsize, drive, folder, crs){
+function ExportImgCol(ImgCol, dateList, range, cellsize, place, folder, crs){
     if (typeof dateList === 'undefined'){
         /** 
          * If dateList was undefined, this function is low efficient.
@@ -205,7 +216,7 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, drive, folder, crs){
         dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
             .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
     }
-    if (typeof drive === 'undefined') { drive = false;}
+    if (typeof place === 'undefined') { place = 'drive';}
     if (typeof crs   === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
 
     var n = dateList.length;
@@ -217,7 +228,7 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, drive, folder, crs){
         // var task = img.get('system:id');//.getInfo();
         var task = date;
         print(task);
-        ExportImg_deg(img, range, task, cellsize, drive, folder, crs); 
+        ExportImg_deg(img, range, task, cellsize, place, folder, crs); 
     }
 }
 
