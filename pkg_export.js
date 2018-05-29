@@ -179,8 +179,8 @@ function ExportImg_deg(Image, range, task, cellsize, place, folder, crs, crs_tra
             break;
     
         case 'cloud':
-            params.bucket         = "gs://kongdd";
-            params.fileNamePrefix = folder;
+            params.bucket         = "kongdd";
+            params.fileNamePrefix = folder.concat('/').concat(task);
             params.skipEmptyTiles = true;
             Export.image.toCloudStorage(params);
             break;
