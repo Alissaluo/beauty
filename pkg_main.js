@@ -130,6 +130,28 @@ function bandsToImgCol(img){
     }));
     return imgcol;
 }
+
+/**
+ * Returns an image containing just the specified QA bits.
+ *
+ * Args:
+ *   image - The QA Image to get bits from.
+ *   start - The first bit position, 0-based.
+ *   end   - The last bit position, inclusive.
+ *   name  - A name for the output image.
+ */
+var getQABits = function(image, start, end, newName) {
+    if (typeof newName === 'undefined') newName = 'b1';
+    // Compute the bits we need to extract.
+    var pattern = 0;
+    for (var i = start; i <= end; i++) {
+       pattern += Math.pow(2, i);
+    }
+    return image.select([0], [newName])
+                  .bitwiseAnd(pattern)
+                  .rightShift(start);
+};
+
 exports = {
     global_prop     : global_prop,
     addYearProp     : addYearProp,
@@ -141,4 +163,5 @@ exports = {
     imgcolRegions   : imgcolRegions,
     array2imgcol    : array2imgcol,
     bandsToImgCol   : bandsToImgCol,
+    getQABits       : getQABits,
 };

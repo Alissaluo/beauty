@@ -133,20 +133,20 @@ function clip(ImgCol, poly){
  * @param {[type]} range     [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15,
  * 120, 40]
  * @param {[type]} task      [description]
- * @param {[type]} scale     [description]
- * @param {[type]} drive     [description]
+ * @param {[type]} cellsize  [description]
+ * @param {[type]} type      [description]
  * @param {[type]} folder    [description]
  * @param {[type]} crs       [description]
  * @param {[type]} crs_trans [description]
  * 
  * @example
- * ExportImg_deg(Image, range, task, scale, drive, folder, crs, crs_trans)
+ * ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_trans)
  */
-function ExportImg_deg(Image, range, task, cellsize, place, folder, crs, crs_trans){
+function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_trans){
     var bounds; // define export region
 
     if (typeof range  === 'undefined') { range  = [-180, -70, 180, 90];}
-    if (typeof place  === 'undefined') { place  = 'drive';}
+    if (typeof type  === 'undefined') { type  = 'drive';}
     if (typeof folder === 'undefined') { folder = ''; }
     if (typeof crs    === 'undefined') { crs    = 'SR-ORG:6974';} //'EPSG:4326'
     if (typeof crs_trans === 'undefined'){
@@ -172,7 +172,7 @@ function ExportImg_deg(Image, range, task, cellsize, place, folder, crs, crs_tra
         maxPixels    : 1e13
     };
 
-    switch(place){
+    switch(type){
         case 'asset':
             params.assetId = folder.concat('/').concat(task), //projects/pml_evapotranspiration/;
             Export.image.toAsset(params);  
@@ -207,7 +207,7 @@ function ExportImg_deg(Image, range, task, cellsize, place, folder, crs, crs_tra
  *
  * @param {float}           cellsize       cellsize in degree 
  */
-function ExportImgCol(ImgCol, dateList, range, cellsize, place, folder, crs){
+function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs){
     if (typeof dateList === 'undefined'){
         /** 
          * If dateList was undefined, this function is low efficient.
@@ -216,7 +216,7 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, place, folder, crs){
         dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
             .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
     }
-    if (typeof place === 'undefined') { place = 'drive';}
+    if (typeof type === 'undefined') { type = 'drive';}
     if (typeof crs   === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
 
     var n = dateList.length;
@@ -228,7 +228,7 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, place, folder, crs){
         // var task = img.get('system:id');//.getInfo();
         var task = date;
         print(task);
-        ExportImg_deg(img, range, task, cellsize, place, folder, crs); 
+        ExportImg_deg(img, range, task, cellsize, type, folder, crs); 
     }
 }
 
