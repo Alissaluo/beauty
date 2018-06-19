@@ -156,12 +156,15 @@ function discrete_legend(names, palette, title, IsPlot) {
     }
 }
 
-function add_lgds(lgds) {
+function add_lgds(lgds, map) {
+    if (typeof map === 'undefined') { map = Map; }
     lgds = ui.Panel({
         widgets: lgds,
         layout: ui.Panel.Layout.Flow('horizontal'),
         style: { fontSize: '14px', margin: '0 0 0px 0', padding: '0 0 0 6px', position: 'bottom-left' }
     });
+    map.add(lgds);
+    
     return lgds;
 }
 
