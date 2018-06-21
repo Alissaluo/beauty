@@ -10,7 +10,8 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
     MOD16A2 = ee.ImageCollection("MODIS/NTSG/MOD16A2/105"),
     NLCD = ee.ImageCollection("USGS/NLCD"),
     MCD12Q1_005 = ee.ImageCollection("MODIS/051/MCD12Q1"),
-    MCD12Q1_006 = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/MCD12Q1_006");
+    MCD12Q1_006 = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/MCD12Q1_006"),
+    point = /* color: #0b4a8b */ee.Geometry.Point([88.83047103881836, 26.40124925727984]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 /**
  * Visualization to check fluxsits' landcover
@@ -75,75 +76,48 @@ var filterDate = ee.Filter.date("2005-01-01", "2012-12-31");
 function showmap(){
     ui.root.clear();
     var maps = [];
-    var mapNames = ["satellite", "MCD12Q1_005", "MOD13A1", "MCD12Q1_006"]; //MOD13A1
+    var mapNames = ["MOD13Q1", "MOD13A1"]; //MOD13A1
     mapNames.forEach(function(name, index) {
         var map = ui.Map(), img;
         map.setOptions('SATELLITE');
         // control visibility
         if (index === 0) {
-            var label = ui.Label(name);
-            map.add(label);
+            map.add(ui.Label(name));
+            map.addLayer(MOD13Q1, {}, 'MOD13Q1');
+            
             // map.setControlVisibility(false);
         } else if (index === 1) {
-            // map.addLayer(land, {}, 'landcover');
-            map.addLayer(MCD12Q1_006, {min: 0, max: 17, palette:lc_colors_006}, 'MCD12Q1_006');
-            map.addLayer(MCD12Q1_005, {min: 0, max: 17, palette:lc_colors_005}, 'MCD12Q1_005');
-            map.add(lg2);
             map.add(ui.Label(name));
-            map.setControlVisibility({
-                mapTypeControl: false,
-                zoomControl: false,
-                fullscreenControl: false
-            });
-        } else if (index === 2) {
-            img = MOD13A1.select(['NDVI', 'EVI']).filter(filterDate);
-            map.addLayer(MCD12Q1_006, {min: 0, max: 17, palette:lc_colors_006}, 'MCD12Q1_006');
+            map.addLayer(MOD13A1, {}, 'MOD13A1');
             
-            map.addLayer(img, visParams, name);
-            map.add(ui.Label(name));
-            
-            map.add(lg1);
-            map.setControlVisibility({
-                mapTypeControl: false,
-                zoomControl: false,
-                fullscreenControl: false
-            });
-        } else {
-            // img = MOD13A1.select(['NDVI', 'EVI']).filter(filterDate);
-            map.addLayer(MCD12Q1_006, {min: 0, max: 17, palette:lc_colors_006}, name);
-            map.add(ui.Label(name));
-            map.add(lg3);
-            map.setControlVisibility({
-                mapTypeControl: false,
-                zoomControl: false,
-                fullscreenControl: false
-            });
-        }
+        } 
         map = basemap(map);
         maps.push(map);
     });
 
     var linker = ui.Map.Linker(maps);
 
-    var leftPanel  = ui.Panel([maps[0], maps[1]], null, { stretch: 'both' });
-    var rightPanel = ui.Panel([maps[2], maps[3]], null, { stretch: 'both' });
-    var mainPanel  = ui.Panel({
-        layout: ui.Panel.Layout.Flow('horizontal'),
-        style: {stretch: "both"}
-    });
-    mainPanel.style().set("stretch", "both");
-    // mainPanel.setLayout(ui.Panel.Layout.Flow('horizontal'));
-    mainPanel.add(leftPanel);
-    mainPanel.add(rightPanel);
-    // Map.add(mainPanel);
+    var leftPanel  = ui.Panel([maps[0], maps[1]], ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });
+    // var rightPanel = ui.Panel([maps[2], maps[3]], null, { stretch: 'both' });
+    // var mainPanel  = ui.Panel({
+    //     layout: ui.Panel.Layout.Flow('horizontal'),
+    //     style: {stretch: "both"}
+    // });
+    // mainPanel.style().set("stretch", "both");
+    // // mainPanel.setLayout(ui.Panel.Layout.Flow('horizontal'));
+    // mainPanel.add(leftPanel);
+    // mainPanel.add(rightPanel);
+    // // Map.add(mainPanel);
     // ui.root.clear();
-    ui.root.add(mainPanel);
+    ui.root.add(leftPanel);
     return maps;
 }
 
 var maps = showmap();
 maps[0].add(zoomToPoint(points, 'site', 14, false));
-maps[0].setCenter(137.81, -20.63, 5);
+maps[0].centerObject(point, 12);
+
+maps[0].setCenter(88.83339, 26.40248, 12);
 /** max value */
 // var label_max  = ui.Label('max value: ');
 // var slider_max = ui.Slider({
