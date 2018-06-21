@@ -55,9 +55,9 @@ function series(ImgCol, vis, name, region, label, scale) {
 /** add gradient legend in GEE */
 function grad_legend(viz, title, IsPlot, position) {
     title    = title || "";
-    IsPlot   = IsPlot || true;
     position = position || "bottom-left";
-    
+    if (IsPlot === undefined) IsPlot = true;
+        
     // If have band information in viz, then remove it.
     if (Object.keys(viz).length > 3){
         viz = ee.Dictionary(viz).remove(['bands']).getInfo();
@@ -105,8 +105,9 @@ function grad_legend(viz, title, IsPlot, position) {
 
 function discrete_legend(names, palette, title, IsPlot, position) {
     title    = title || "";
-    IsPlot   = IsPlot || true;
     position = position || "bottom-left";
+    if (IsPlot === undefined) IsPlot = true;
+    
     // Display a legend explaining the colors assigned to a MODIS land cover
     // classification image.
 
