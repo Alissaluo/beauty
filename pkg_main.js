@@ -107,7 +107,7 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
            
             var yi  = mat.arraySlice(0, i, i.add(1));
             var img = yi.arrayProject([1]).arrayFlatten([bands]);
-            return pkg_main.setImgProperties(img, beginDate);
+            return setImgProperties(img, beginDate);
             // return img.addBands(whit);
         });
     return ee.ImageCollection(imgcol_new);
