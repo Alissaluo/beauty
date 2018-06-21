@@ -201,3 +201,14 @@ function zoomToPoint(FeaCol, name, zoomlevel, IsPrint) {
         return tool;
     }
 }
+
+'<RasterSymbolizer> <ColorMap type="intervals" extended="false" ></ColorMap></RasterSymbolizer>' +
+    '' +
+      '<ColorMapEntry color="#0000ff" quantity="0" label="0"/>' +
+      '<ColorMapEntry color="#00ff00" quantity="100" label="1-100" />' +
+      '<ColorMapEntry color="#007f30" quantity="200" label="110-200" />' +
+      '<ColorMapEntry color="#30b855" quantity="300" label="210-300" />' +
+      '<ColorMapEntry color="#ff0000" quantity="400" label="310-400" />' +
+      '<ColorMapEntry color="#ffff00" quantity="1000" label="410-1000" />' +
+    '' +
+  ''

@@ -50,7 +50,7 @@ function imgRegions(img, regions, name){
             .set('data', data);
     });
     
-    if (typeof name !== 'undefined'){
+    if (name !== undefined){
         var keys   = val.aggregate_array('site');
         var values = val.aggregate_array('data');
         var dict   = ee.Dictionary.fromLists(keys, values);
@@ -62,7 +62,7 @@ function imgRegions(img, regions, name){
 
 function imgcolRegion(imgcol, region, name){
     var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegion(img, region, name)});
-    if (typeof name !== 'undefined'){
+    if (name !== undefined){
         print(name, vals);
     }
     return vals;
@@ -70,7 +70,7 @@ function imgcolRegion(imgcol, region, name){
 
 function imgcolRegions(imgcol, regions, name){
     var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegions(img, regions, name)});
-    if (typeof name !== 'undefined'){
+    if (name !== undefined){
         print(name, vals);
     }
     return vals;
@@ -93,7 +93,7 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
     nrow = ee.Number(nrow);
     ncol = ee.Number(ncol);
     
-    if (typeof bands === 'undefined'){
+    if (bands === undefined){
         bands = ee.List.sequence(1, ncol).map(function(i){
             return ee.String('iter').cat(ee.Number(i).int());
         }).getInfo();
@@ -141,7 +141,8 @@ function bandsToImgCol(img){
  *   name  - A name for the output image.
  */
 var getQABits = function(image, start, end, newName) {
-    if (typeof newName === 'undefined') newName = 'b1';
+    end     = end || start;
+    newName = newName || "b1";
     // Compute the bits we need to extract.
     var pattern = 0;
     for (var i = start; i <= end; i++) {

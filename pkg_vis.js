@@ -13,10 +13,12 @@
  * @return {[type]}           [description]
  *
  * @example
- * Map.add(ui.Label('text'));
+ * var label = ui.Label('text');
+ * Map.add(label);
  * pkg_vis.series(imgcol, {}, 'bandname', region, label);
  */
-function series(ImgCol, vis, name, region, label) {
+function series(ImgCol, vis, name, region, label, scale) {
+    scale   = scale || 2000;
     var img = ee.Image(ImgCol.first());
     Map.addLayer(img, vis, name);
 
@@ -24,7 +26,7 @@ function series(ImgCol, vis, name, region, label) {
         imageCollection: ImgCol, //['ETsim', 'Es', 'Eca', 'Ecr', 'Es_eq']
         region         : region,
         reducer        : ee.Reducer.mean(),
-        scale          : 2000
+        scale          : scale
     });
 
     // When the chart is clicked, update the map and label.
@@ -40,7 +42,7 @@ function series(ImgCol, vis, name, region, label) {
         Map.layers().reset([Layer]);
         
         // Show a label with the date on the map.
-        if (typeof label !== undefined){
+        if (label !== undefined){
             label.setValue(ee.Date(xValue).format('yyyy-MM-dd').getInfo()); //.toUTCString(), E, 
         }
     });
@@ -51,18 +53,17 @@ function series(ImgCol, vis, name, region, label) {
 }
 
 /** add gradient legend in GEE */
-function grad_legend(viz, title, IsPlot) {
-    if (typeof title  === 'undefined') title = '';
-    if (typeof IsPlot === 'undefined') IsPlot = true;
+function grad_legend(viz, title, IsPlot, position) {
+    title    = title || "";
+    IsPlot   = IsPlot || true;
+    position = position || "bottom-left";
     
     // If have band information in viz, then remove it.
     if (Object.keys(viz).length > 3){
         viz = ee.Dictionary(viz).remove(['bands']).getInfo();
     }
 
-    var legend = ui.Panel({
-        style: { position: 'bottom-left', padding: '2px 6px' }
-    });
+    var legend = ui.Panel({ style:{position: 'bottom-left', padding: '2px 6px'} });
     var legendTitle = ui.Label({
         value: title,
         style: {
@@ -102,16 +103,15 @@ function grad_legend(viz, title, IsPlot) {
     }
 }
 
-function discrete_legend(names, palette, title, IsPlot) {
-    if (typeof title  === 'undefined') title = 'legend';
-    if (typeof IsPlot === 'undefined') IsPlot = true;
+function discrete_legend(names, palette, title, IsPlot, position) {
+    title    = title || "";
+    IsPlot   = IsPlot || true;
+    position = position || "bottom-left";
     // Display a legend explaining the colors assigned to a MODIS land cover
     // classification image.
 
     // Create the panel for the legend items.
-    var legend = ui.Panel({
-        style: { position: 'bottom-left', padding: '8px 15px'}
-    });
+    var legend = ui.Panel({ style:{position: position, padding: '8px 15px'} });
 
     // Create and add the legend title.
     var legendTitle = ui.Label({
@@ -157,7 +157,7 @@ function discrete_legend(names, palette, title, IsPlot) {
 }
 
 function add_lgds(lgds, map) {
-    if (typeof map === 'undefined') { map = Map; }
+    map = map || Map;
     lgds = ui.Panel({
         widgets: lgds,
         layout: ui.Panel.Layout.Flow('horizontal'),

@@ -23,7 +23,7 @@ var filterTimeEq = ee.Filter.equals({
 
 /** SaveBest: ee.Join.saveBest ImgCol according to filter, the default filter was filterTimeEq */
 var SaveBest = function(primary, secondary, filter) {
-    if (typeof filter === 'undefined') filter = filterTimeEq;
+    filter = filter || filterTimeEq;
     var joinedImgCol = ee.Join.saveBest('matches', 'measure')
         .apply(primary, secondary, filter)
         // .aside(print)
@@ -37,9 +37,9 @@ var SaveBest = function(primary, secondary, filter) {
 
 /** InnerJoin: Join to ImgCol according to filter, the default filter was filterTimeEq */
 var InnerJoin = function(primary, secondary, filter, join) {
-    if (typeof filter === 'undefined') filter = filterTimeEq;
-    if (typeof join   === 'undefined') join   = ee.Join.inner();
-    
+    filter = filter || filterTimeEq;
+    join   = join   || ee.Join.inner();
+
     // Apply the join.
     var JoinedImgCol_raw = join.apply(primary, secondary, filter);
     // Display the join result: a FeatureCollection.
@@ -89,7 +89,7 @@ var Img_absdiff = function(left, right){
  * @return {ImageCollection}       [description]
   */ 
 var resampleToDaily = function(dailyImg_iters, ImgCols, days) {
-    if (typeof days === 'undefined'){ days = 9; }
+    days = days || 9;
     var maxDiff   = ee.Filter.maxDifference({
         difference: days * millis_1d,
         leftField : 'system:time_start',

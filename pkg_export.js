@@ -59,10 +59,10 @@ function mh_Buffer(features, reducer, scale, list) {
  * @return {NULL}          [description]
  */
 function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file, folder, fileFormat){
-    if (typeof distance   === 'undefined') distance = 0;   
-    if (typeof list       === 'undefined') list     = false;
-    if (typeof scale      === 'undefined') scale    = 500;
-    if (typeof fileFormat === 'undefined') fileFormat = "GeoJSON";
+    distance   = distance   || 0;
+    list       = list       || false; 
+    scale      = scale      || 500;
+    fileFormat = fileFormat || "GeoJSON";
 
     // If distance > 0, buffer will be applied to `features`
     if (distance > 0){
@@ -100,10 +100,10 @@ function spClipImgCol(ImgCol, points, scale, name, fileFormat){
  * Otherwise, none will be return. 
  */
 function Export_Table(export_data, save, file, folder, fileFormat) {
-    if (typeof save       === 'undefined') save       = false;
-    if (typeof folder     === 'undefined') folder     = "";
-    if (typeof fileFormat === 'undefined') fileFormat = "GeoJSON";
-    
+    save       = save       || false;
+    folder     = folder     || "";
+    fileFormat = fileFormat || "GeoJSON";
+
     // export params
     var params = {
         collection  : export_data, //.flatten(),
@@ -145,10 +145,11 @@ function clip(ImgCol, poly){
 function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_trans){
     var bounds; // define export region
 
-    if (typeof range  === 'undefined') { range  = [-180, -70, 180, 90];}
-    if (typeof type  === 'undefined') { type  = 'drive';}
-    if (typeof folder === 'undefined') { folder = ''; }
-    if (typeof crs    === 'undefined') { crs    = 'SR-ORG:6974';} //'EPSG:4326'
+    range  = range  || [-180, -60, 180, 90];
+    type   = type   || 'drive';
+    folder = folder || "";
+    crs    = crs    || 'SR-ORG:6974';
+
     if (typeof crs_trans === 'undefined'){
         bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
     }
@@ -216,9 +217,9 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs){
         dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
             .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
     }
-    if (typeof type === 'undefined') { type = 'drive';}
-    if (typeof crs   === 'undefined') { crs = 'SR-ORG:6974';} //'EPSG:4326'
-
+    type   = type   || 'drive';
+    crs    = crs    || 'SR-ORG:6974';
+    
     var n = dateList.length;
     
     for (var i = 0; i < n; i++) {
