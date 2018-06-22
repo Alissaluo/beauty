@@ -185,19 +185,16 @@ function layout(n, ncol, nrow){
     
     var maps = [], map;
     for (var i = 0; i < n; i++) maps.push(ui.Map());
-    
-    print(maps);
-    
+
     var s = 0, k; //sum
     var panels_row = [];
-    for (i = 0; i < nrow; i++) {
+    for (var i = 0; i < nrow; i++) {
         var panels_col = [];
         for (var j = 0; j < ncol; j++) {
             k = i*ncol + j;
             if (k >= n) break;
             panels_col.push(maps[k]);
         }
-        print(panels_col);
         panels_row[i]  = ui.Panel(panels_col, ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });    
     }
     
