@@ -11,7 +11,44 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
     NLCD = ee.ImageCollection("USGS/NLCD"),
     MCD12Q1_005 = ee.ImageCollection("MODIS/051/MCD12Q1"),
     MCD12Q1_006 = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/MCD12Q1_006"),
-    point = /* color: #0b4a8b */ee.Geometry.Point([88.83047103881836, 26.40124925727984]);
+    region = /* color: #0b4a8b */ee.Geometry({
+      "type": "GeometryCollection",
+      "geometries": [
+        {
+          "type": "Point",
+          "coordinates": [
+            88.83047103881836,
+            26.40124925727984
+          ]
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                88.69194030761719,
+                26.447828357773517
+              ],
+              [
+                88.91441345214844,
+                26.22506291302477
+              ],
+              [
+                89.00436401367188,
+                26.289105700811348
+              ],
+              [
+                88.79562377929688,
+                26.509904531413927
+              ]
+            ]
+          ],
+          "geodesic": true,
+          "evenOdd": true
+        }
+      ],
+      "coordinates": []
+    });
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 /**
  * Visualization to check fluxsits' landcover
@@ -40,7 +77,7 @@ var lc_names_006 = ['UNC', 'ENF', 'EBF', 'DNF', 'DBF', 'MF',
 
 /** visualization parameters for EVI */
 var palette = ['#570088', '#920057', '#CE0027', '#FF0A00', '#FF4500', '#FF8000', '#FFB100', '#FFD200', '#FFF200', '#C7EE03', '#70D209', '#18B80E', '#067F54', '#033FA9', '#0000FF'];
-var visParams = { min: 0.0, max: 10000.0, palette: palette.reverse(), bands: 'EVI'};
+var vis     = { min: 0.0, max: 9000.0, palette: palette.reverse(), bands: 'EVI'};
 // visParams = ee.Dictionary(visParams).remove(['bands']);
 
 var lg = ui.Panel({ 
@@ -50,132 +87,79 @@ var lg = ui.Panel({
       padding: '8px 15px' 
   } });
 
-var lg1 = pkg_vis.grad_legend(visParams, 'VI', false);
+var lg1 = pkg_vis.grad_legend(vis, 'VI', false);
 var lg2 = pkg_vis.discrete_legend(lc_names_005, lc_colors_005, 'MCD12Q1_005', false);
 var lg3 = pkg_vis.discrete_legend(lc_names_006, lc_colors_006, 'MCD12Q1_006', false);
 
-// print(lg3, 'hello');
-// function showLegend(){
-//   lg.clear();
-//   lg.add(lg2).add(lg1);
-//   // lg1.add(lg2);
-//   Map.add(lg);
-// }
-// showLegend();
-// Map.addLayer(land, {}, 'landcover');
-// Map.addLayer(MOD13Q1.select(['NDVI', 'EVI']), visParams, 'MOD13Q1');
-// Map.addLayer(MOD13A1.select(['NDVI', 'EVI']), visParams, 'MOD13A1');
-// Map.addLayer(points, {color:"red"}, 'points');
 function basemap(map){
     map.addLayer(points, {color:"red"}, 'points');
     map.addLayer(points_buf, {}, 'points_buf');
     return map;
 }
 
+var mapNames = ["MOD13Q1", "MOD13A1"]; //MOD13A1
+var maps = []; 
+MOD13Q1 = MOD13Q1.select(['NDVI', 'EVI']);
+var imgcols = [MOD13Q1, MOD13A1];
+
 var filterDate = ee.Filter.date("2005-01-01", "2012-12-31");
-function showmap(){
-    ui.root.clear();
-    var maps = [];
-    var mapNames = ["MOD13Q1", "MOD13A1"]; //MOD13A1
-    mapNames.forEach(function(name, index) {
-        var map = ui.Map(), img;
-        map.setOptions('SATELLITE');
-        // control visibility
-        if (index === 0) {
-            map.add(ui.Label(name));
-            map.addLayer(MOD13Q1, {}, 'MOD13Q1');
-            
-            // map.setControlVisibility(false);
-        } else if (index === 1) {
-            map.add(ui.Label(name));
-            map.addLayer(MOD13A1, {}, 'MOD13A1');
-            
-        } 
-        map = basemap(map);
-        maps.push(map);
+
+/** visualization */
+init_maps();
+maps_update();
+maps[0].setCenter(88.83339, 26.40248, 12);
+
+var chart = ui.Chart.image.series({
+    imageCollection: imgcols[0], //['ETsim', 'Es', 'Eca', 'Ecr', 'Es_eq']
+    region         : region,
+    reducer        : ee.Reducer.mean(),
+    scale          : 2000
+});
+chart.style().set({ position: 'bottom-right', width: '500px', height: '300px' });  
+chart.onClick(function(xValue, yValue, seriesName) {
+    if (!xValue) return; // Selection was cleared.
+    var datestr   = (new Date(xValue)).toUTCString();
+    chart.setOptions({title: datestr});
+    // Show the image for the clicked date.
+    // var equalDate = ee.Filter.equals('system:time_start', xValue);
+    maps_update(xValue);
+    // Show a label with the date on the map.
+    // if (label !== undefined)
+    //     label.setValue(ee.Date(xValue).format('yyyy-MM-dd').getInfo()); //.toUTCString(), E, 
+});
+    
+print(chart);
+
+// 0 : label, 1 : imgcol
+function init_maps(){
+    mapNames.forEach(function(value, index) {
+      var map = ui.Map(), img;
+      // map.setOptions('SATELLITE');
+      
+      map.widgets().set(0, ui.Label(value));
+      if (index === 0) map.add(lg1);
+      // if (index === 0) map.add(chart);
+      maps.push(map);
     });
-
+    
     var linker = ui.Map.Linker(maps);
-
-    var leftPanel  = ui.Panel([maps[0], maps[1]], ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });
-    // var rightPanel = ui.Panel([maps[2], maps[3]], null, { stretch: 'both' });
-    // var mainPanel  = ui.Panel({
-    //     layout: ui.Panel.Layout.Flow('horizontal'),
-    //     style: {stretch: "both"}
-    // });
-    // mainPanel.style().set("stretch", "both");
-    // // mainPanel.setLayout(ui.Panel.Layout.Flow('horizontal'));
-    // mainPanel.add(leftPanel);
-    // mainPanel.add(rightPanel);
-    // // Map.add(mainPanel);
-    // ui.root.clear();
-    ui.root.add(leftPanel);
-    return maps;
+    var Panel  = ui.Panel([maps[0], maps[1]], ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });
+    
+    ui.root.clear();
+    ui.root.add(Panel);
+    // return maps; // global variable
 }
 
-var maps = showmap();
-maps[0].add(zoomToPoint(points, 'site', 14, false));
-maps[0].centerObject(point, 12);
-
-maps[0].setCenter(88.83339, 26.40248, 12);
-/** max value */
-// var label_max  = ui.Label('max value: ');
-// var slider_max = ui.Slider({
-//   min: 1000, max: 10000, value: visParams.max,
-//   step: 500,
-//   onChange: function(value){
-//       visParams.max = value;
-//       maps = showmaps();
-//   },
-//   style: {stretch: 'horizontal'}
-// });
-// var panel_max = ui.Panel({
-//   widgets: [label_max, slider_max],
-//   layout: ui.Panel.Layout.flow('horizontal'),
-//   style: { position: 'bottom-left', padding: '3px' }
-// });
-
-/** max value */
-// var label_min  = ui.Label('min value: ');
-// var slider_min = ui.Slider({
-//   min : 0, max: 10000,value: visParams.min,
-//   step: 500,
-//   onChange: function(value){
-//       visParams.min = value;
-//       maps = showmaps();
-//   },
-//   style: {stretch: 'horizontal'}
-// });
-// var panel_min = ui.Panel({
-//   widgets: [label_min, slider_min],
-//   layout: ui.Panel.Layout.flow('horizontal'),
-//   style: { position: 'top-left', padding: '3px' }
-// });
-// maps[2].add(panel_max);
-// maps[2].add(panel_min);
-// zoomToPoint(points, 'site', 14);
-
-function zoomToPoint(FeaCol, name, zoomlevel, IsPrint) {
-    if (typeof zoomlevel === 'undefined') zoomlevel = 14;
-    if (typeof IsPrint === 'undefined') IsPrint = true;
-
-    FeaCol = FeaCol.sort(name);
-    var names = FeaCol.aggregate_array(name).getInfo();
-
-    // Get 1 row of the table and center the map on it.
-    var centerObject = function(value) {
-        // var row = ee.Number.parse(value);
-        // Map.centerObject( ee.Feature(stations.toList(1, row).get(0)).geometry());
-        var point = ee.Feature(FeaCol.filterMetadata(name, 'equals', value).first()); //ee.Filter.eq('site', value)
-        maps[0].centerObject(point.geometry(), zoomlevel);
-    };
-
-    var size = FeaCol.size(); // How many objects?
-    var tool = ui.Select({ items: names, onChange: centerObject });
-    // tool.setValue(names[0]);
-    if (IsPrint) {
-        print(tool);
-    } else {
-        return tool;
+function maps_update(date){
+    if (date === undefined){
+        date = imgcols[0].aggregate_first('system:time_start');
     }
+    date = ee.Date(date);
+    
+    maps.forEach(function(value, index) {
+        var imgcol = imgcols[index];
+        var img = imgcol.filterDate(date);
+        var layer = ui.Map.Layer(img, vis, mapNames[index]);
+        maps[index].layers().insert(2, layer);
+    });
 }
