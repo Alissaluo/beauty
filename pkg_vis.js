@@ -169,9 +169,50 @@ function add_lgds(lgds, map) {
     return lgds;
 }
 
+/**
+ * layout function similar as layout in R language
+ * 
+ * @param n How many maps to draw
+ * @param ncol 
+ * @param nrow
+ * 
+ * @return maps
+ */
+function layout(n, ncol, nrow){
+    n    = n || 2;
+    ncol = ncol || Math.ceil(Math.sqrt(len));
+    nrow = nrow || Math.ceil(len/ncol);
+    
+    var maps = [], map;
+    for (var i = 0; i < len; i++) maps.push(ui.Map());
+    
+    print(maps);
+    
+    var s = 0, k; //sum
+    var panels_row = [];
+    for (i = 0; i < nrow; i++) {
+        var panels_col = [];
+        for (var j = 0; j < ncol; j++) {
+            k = i*ncol + j;
+            if (k >= len) break;
+            panels_col.push(maps[k]);
+        }
+        print(panels_col);
+        panels_row[i]  = ui.Panel(panels_col, ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });    
+    }
+    
+    var linker = ui.Map.Linker(maps);
+    var Panel  = ui.Panel(panels_row, ui.Panel.Layout.Flow('vertical'), { stretch: 'both' });
+    
+    ui.root.clear();
+    ui.root.add(Panel);
+    return maps;
+}
+
 exports = {
     series         : series,
     grad_legend    : grad_legend,
     discrete_legend: discrete_legend,
+    layout         : layout,
     add_lgds       : add_lgds,
 };
