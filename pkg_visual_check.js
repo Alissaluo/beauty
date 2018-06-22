@@ -115,6 +115,7 @@ var chart = ui.Chart.image.series({
     reducer        : ee.Reducer.mean(),
     scale          : 2000
 });
+
 chart.style().set({ position: 'bottom-right', width: '500px', height: '300px' });  
 chart.onClick(function(xValue, yValue, seriesName) {
     if (!xValue) return; // Selection was cleared.
@@ -128,7 +129,7 @@ chart.onClick(function(xValue, yValue, seriesName) {
     //     label.setValue(ee.Date(xValue).format('yyyy-MM-dd').getInfo()); //.toUTCString(), E, 
 });
     
-print(chart);
+print(typeof chart, chart);
 
 // 0 : label, 1 : imgcol
 function init_maps(){
@@ -138,7 +139,9 @@ function init_maps(){
       
       map.widgets().set(0, ui.Label(value));
       if (index === 0) map.add(lg1);
-      // if (index === 0) map.add(chart);
+      if (index === 0) map.add(ui.Panel([chart], null, {position: 'bottom-right', width: '500px', height: '300px'}));
+      if (index === 0) map.add(chart);
+      
       maps.push(map);
     });
     
@@ -160,6 +163,6 @@ function maps_update(date){
         var imgcol = imgcols[index];
         var img = imgcol.filterDate(date);
         var layer = ui.Map.Layer(img, vis, mapNames[index]);
-        maps[index].layers().insert(2, layer);
+        maps[index].layers().set(2, layer);
     });
 }
