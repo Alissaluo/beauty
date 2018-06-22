@@ -180,11 +180,11 @@ function add_lgds(lgds, map) {
  */
 function layout(n, ncol, nrow){
     n    = n || 2;
-    ncol = ncol || Math.ceil(Math.sqrt(len));
-    nrow = nrow || Math.ceil(len/ncol);
+    ncol = ncol || Math.ceil(Math.sqrt(n));
+    nrow = nrow || Math.ceil(n/ncol);
     
     var maps = [], map;
-    for (var i = 0; i < len; i++) maps.push(ui.Map());
+    for (var i = 0; i < n; i++) maps.push(ui.Map());
     
     print(maps);
     
@@ -194,7 +194,7 @@ function layout(n, ncol, nrow){
         var panels_col = [];
         for (var j = 0; j < ncol; j++) {
             k = i*ncol + j;
-            if (k >= len) break;
+            if (k >= n) break;
             panels_col.push(maps[k]);
         }
         print(panels_col);
