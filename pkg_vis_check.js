@@ -48,7 +48,9 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
         }
       ],
       "coordinates": []
-    });
+    }),
+    imgcol_pmlv2 = ee.ImageCollection("projects/pml_evapotranspiration/PML/OUTPUT/PML_V2_8day"),
+    imgcol_mod16a2 = ee.ImageCollection("MODIS/NTSG/MOD16A2/105");
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 /**
  * Visualization to check fluxsits' landcover
@@ -77,7 +79,7 @@ var lc_names_006 = ['UNC', 'ENF', 'EBF', 'DNF', 'DBF', 'MF',
 
 /** visualization parameters for EVI */
 var palette = ['#570088', '#920057', '#CE0027', '#FF0A00', '#FF4500', '#FF8000', '#FFB100', '#FFD200', '#FFF200', '#C7EE03', '#70D209', '#18B80E', '#067F54', '#033FA9', '#0000FF'];
-var vis     = { min: 0.0, max: 9000.0, palette: palette.reverse(), bands: 'EVI'};
+var vis     = { min: 0.0, max: 50.0, palette: palette.reverse(), bands: 'ET'};
 // visParams = ee.Dictionary(visParams).remove(['bands']);
 
 var lg = ui.Panel({ 
@@ -87,7 +89,7 @@ var lg = ui.Panel({
       padding: '8px 15px' 
   } });
 
-var lg1 = pkg_vis.grad_legend(vis, 'VI', false);
+var lg1 = pkg_vis.grad_legend(vis, 'ET (8-day mm)', false);
 var lg2 = pkg_vis.discrete_legend(lc_names_005, lc_colors_005, 'MCD12Q1_005', false);
 var lg3 = pkg_vis.discrete_legend(lc_names_006, lc_colors_006, 'MCD12Q1_006', false);
 
@@ -97,10 +99,26 @@ function basemap(map){
     return map;
 }
 
-var mapNames = ["MOD13Q1", "MOD13A1"]; //MOD13A1
+imgcol_pmlv2 = imgcol_pmlv2.select([0, 1, 2, 3, 4]).map(function(img){
+    img = img.divide(100).multiply(8)
+        .copyProperties(img, ['system:time_start']);
+    img   = ee.Image(img);
+    var ET = img.expression('b("Ec") + b("Es") + b("Ei")').rename("ET");
+    return img.addBands(ET);
+});
+imgcol_mod16a2 = imgcol_mod16a2.map(function(img){
+    return img.divide(10)
+        .copyProperties(img, ['system:time_start']);
+    
+});
+
+var mapNames = ["pmlv2", "mod16a2", "MCD12Q1_005", "MCD12Q1_006"]; //MOD13A1
 var maps = []; 
-MOD13Q1 = MOD13Q1.select(['NDVI', 'EVI']);
-var imgcols = [MOD13Q1, MOD13A1];
+
+MCD12Q1_005 = MCD12Q1_005.select(0);
+var imgcols = [imgcol_pmlv2, imgcol_mod16a2, MCD12Q1_005, MCD12Q1_006];
+
+print(MCD12Q1_005);
 
 var filterDate = ee.Filter.date("2005-01-01", "2012-12-31");
 
@@ -110,6 +128,7 @@ var chart = ui.Chart.image.series({
     reducer        : ee.Reducer.mean(),
     scale          : 2000
 });
+
 
 chart.style().set({ position: 'bottom-right', width: '500px', height: '300px', 
     margin: '0 0 0px 0', padding: '0'});  
@@ -127,30 +146,28 @@ chart.onClick(function(xValue, yValue, seriesName) {
     
 // print(typeof chart, chart);
 
-
 /** visualization */
+maps = pkg_vis.layout(4);
+
 init_maps();
 maps_update();
 maps[0].setCenter(88.83339, 26.40248, 12);
 
-
 // 0 : label, 1 : imgcol
 function init_maps(){
     mapNames.forEach(function(value, index) {
-      var map = ui.Map(), img;
+      var map = maps[index], img;
       // map.setOptions('SATELLITE');
       if (index === 0) map.add(lg1);
       // if (index === 0) map.add(ui.Panel([chart], null, {position: 'bottom-right', width: '500px', height: '300px'}));
-      if (index === mapNames.length - 1) map.widgets().set(1, chart);
-      
-      maps.push(map);
+      if (index === 2){
+          map.add(lg2);
+      }
+      if (index === mapNames.length - 1) {
+          map.add(lg3);
+          map.add(chart);
+      }
     });
-    
-    var linker = ui.Map.Linker(maps);
-    var Panel  = ui.Panel([maps[0], maps[1]], ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });
-    
-    ui.root.clear();
-    ui.root.add(Panel);
     // return maps; // global variable
 }
 
@@ -160,15 +177,28 @@ function maps_update(date){
     }
     date        = ee.Date(date);
     var datestr = date.format('yyyy-MM-dd').getInfo();
+    var year    = date.get('year');
     
+    var filter_year = ee.Filter.calendarRange(year, year, 'year');
+    var filter_date = ee.Filter.date(date);
     maps.forEach(function(value, index) {
         var str = mapNames[index] + ', ' + datestr;
         
-        maps[index].widgets().set(1, ui.Label(str));
+        maps[index].widgets().set(2, ui.Label(str));
        
         var imgcol = imgcols[index];
-        var img = imgcol.filterDate(date);
-        var layer = ui.Map.Layer(img, vis, mapNames[index]);
+        
+        var filter = index >= 2 ? filter_year : filter_date;
+        var img = imgcol.filter(filter);
+        
+        var layer;
+        if (index < 2){
+            layer = ui.Map.Layer(img, vis, mapNames[index]);
+        }
+        
+        if (index === 2) layer = ui.Map.Layer(img, {min: 0, max: 17, palette:lc_colors_005}, mapNames[index]);
+        if (index === 3) layer = ui.Map.Layer(img, {min: 0, max: 17, palette:lc_colors_006}, mapNames[index]);
+        
         maps[index].layers().set(0, layer);
     });
 }
