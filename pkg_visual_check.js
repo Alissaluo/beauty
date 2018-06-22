@@ -139,7 +139,7 @@ function init_maps(){
       
       map.widgets().set(0, ui.Label(value));
       if (index === 0) map.add(lg1);
-      if (index === 0) map.add(ui.Panel([chart], null, {position: 'bottom-right', width: '500px', height: '300px'}));
+      // if (index === 0) map.add(ui.Panel([chart], null, {position: 'bottom-right', width: '500px', height: '300px'}));
       if (index === 0) map.add(chart);
       
       maps.push(map);
