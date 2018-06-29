@@ -31,7 +31,7 @@ function setImgProperties(img, beginDate) {
 
 /** get values from image array or imgcol, clipped by region or regions */
 function imgRegion(img, region, name){
-    var val = ee.Image(img).reduceRegion({reducer:ee.Reducer.toList(), geometry:point, scale:500});
+    var val = ee.Image(img).reduceRegion({reducer:ee.Reducer.toList(), geometry:region, scale:500});
     // val = ee.List(val);
     print(name, val); //.get('L')
     return val;
@@ -39,7 +39,7 @@ function imgRegion(img, region, name){
 
 function imgRegions(img, regions, name){
     var val = ee.Image(img).reduceRegions({
-        collection:points,
+        collection:regions,
         reducer:ee.Reducer.toList(),
         scale:500, 
         tileScale:16
@@ -139,6 +139,9 @@ function bandsToImgCol(img){
  *   start - The first bit position, 0-based.
  *   end   - The last bit position, inclusive.
  *   name  - A name for the output image.
+ *
+ * @usage
+ * pkg_main.getQABits(image, start, end)
  */
 var getQABits = function(image, start, end, newName) {
     end     = end || start;
