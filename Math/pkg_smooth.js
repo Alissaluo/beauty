@@ -71,7 +71,7 @@ function modweight_bisquare_array(re, w) {
     var w_new = re.expression('pow(1 - pow(b()/sc, 2), 2)', { sc: sc });
         
     if (typeof w !== 'undefined'){
-        w_new = w_new.expression('(re <  0) * b() + (re >= 0)*w' , { re:re, w:w });
+        w_new = w_new.expression('(re >  0) * b() + (re <= 0)*w' , { re:re, w:w });
     }
     w_new = w_new.expression('(re >= sc)*0 + (re < sc) * b()', { sc:sc, re:re.abs() });
     // Map.addLayer(w, {}, 'inside w');
