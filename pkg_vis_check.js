@@ -118,7 +118,7 @@ var maps = [];
 MCD12Q1_005 = MCD12Q1_005.select(0);
 var imgcols = [imgcol_pmlv2, imgcol_mod16a2, MCD12Q1_005, MCD12Q1_006];
 
-print(MCD12Q1_005);
+// print(MCD12Q1_005);
 
 var filterDate = ee.Filter.date("2005-01-01", "2012-12-31");
 
