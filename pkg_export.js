@@ -10,20 +10,20 @@
  * @param  {[type]} reducer  [description]
  * @param  {[type]} scale    [description]
  * @param  {[type]} list     [description]
+ * @param  {dict} options    other options for reduceRegions, e.g. crs, scale
  * @return {[type]}          [description]
  * 
  * @examples
  * var export_data = ImgCol.map(mh_BufferPoints(points, 250, reducer,
  * 250));
  */
-function mh_Buffer(features, reducer, scale, list) {
+function mh_Buffer(options, list) {
+    list = list || F;
     if (list){
         // ee.Reducer.toList() result contains geometry, need to remove it.
         // features' band properties have already could distinguish each other.
         return function(img){
-            return img.reduceRegions({ 
-                collection: features, scale: scale, reducer: reducer, tileScale: 16 
-            })
+            return img.reduceRegions(options)
             .map(function(f){ 
                 return ee.Feature(null).copyProperties(f)
                     .set('date', ee.Date(img.get('system:time_start')).format('yyyy-MM-dd'));
@@ -31,9 +31,7 @@ function mh_Buffer(features, reducer, scale, list) {
         };
     }else{
         return function(img){
-            var data = img.reduceRegions({ 
-                collection: features, scale: scale, reducer: reducer, tileScale: 16
-            })
+            var data = img.reduceRegions(options)
             .map(function(f){ return f.get('features'); }).flatten(); 
             // `ee.Reducer.toCollection` has no feature geometry, and cliped 
             // data are in FeatureCollection.
@@ -58,32 +56,58 @@ function mh_Buffer(features, reducer, scale, list) {
  * @param  {Boolean} folder   [description]
  * @return {NULL}          [description]
  */
-function clipImgCol(ImgCol, features, distance, reducer, scale, list, save, file, folder, fileFormat){
+function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folder, fileFormat){
     distance   = distance   || 0;
     list       = list       || false; 
-    scale      = scale      || 500;
     fileFormat = fileFormat || "GeoJSON";
+    reducer    = reducer    || "first";
 
     // If distance > 0, buffer will be applied to `features`
     if (distance > 0){
         reducer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames()); 
         features = features.map(function(f) { return f.buffer(distance);});
-    }else {
-        if(typeof reducer  === 'undefined') reducer = ee.Reducer.first();//mean();
     }
-    
-    var export_data = ImgCol.map(mh_Buffer(features, reducer, scale, list), true).flatten();
+
+    var image = ee.Image(ImgCol.first().select(0));
+    var prj   = image.projection(), 
+        scale = prj.nominalScale();
+    var options = { collection: features, reducer: reducer, crs: prj, scale: scale, tileScale: 16 };
+
+    var export_data = ImgCol.map(mh_Buffer(options, list), true).flatten();
     Export_Table(export_data, save, file, folder, fileFormat);
 }
 
-function spClipImgCol(ImgCol, points, scale, name, fileFormat){
-    var dists = [0, 1, 2]; //, 1000 
+/**
+ * [spClipImgCol description]
+ *
+ * @param  {[type]} ImgCol     [description]
+ * @param  {[type]} points     [description]
+ * @param  {[type]} name       [description]
+ * @param  {[type]} scale      scale only used to generate buffer distance. 
+ * `reduceRegions` use image.projection().nominalScale() as scale.
+ * @param  {[type]} buffer     [description]
+ * @param  {[type]} folder     [description]
+ * @param  {[type]} fileFormat [description]
+ * @return {[type]}            [description]
+ */
+function spClipImgCol(ImgCol, points, name, scale, buffer, folder, fileFormat){
+    scale      = scale      || scale;
+    buffer     = buffer     || false;
+    folder     = folder     || "";
+    fileFormat = fileFormat || "csv";
+
+    var image  = ee.Image(ImgCol.first()), 
+        prj    = image.projection(), 
+        scale  = prj.nominalScale();
+    
+    var dists  = buffer ? [0] : [0, 1, 2];
+    scale = ee.Number(scale);
+
     ImgCol = ee.ImageCollection(ImgCol);
-    var dist;
     for(var i = 0; i < dists.length; i++){
-        dist = dists[i]*scale;
-        file = 'fluxsites_'.concat(name).concat('_').concat(dist).concat('m_buffer');
-        BufferPoints(ImgCol, points, dist, reducer, scale, list, save, file, folder, fileFormat);
+        dist = scale.multiply(dists[i]);
+        file = ''.concat(name).concat('_').concat(dist).concat('m_buffer');//fluxsites_
+        clipImgCol(ImgCol, points, dist, reducer, list, save, file, folder, fileFormat); //geojson
     }  
 }
 
@@ -162,7 +186,7 @@ function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_tran
 
     var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
 
-    // var crs_trans  = [cellsize, 0, -180, 0, -cellsize, 90];
+    // var crs_trans  = [cellsize, 0, -180, 0, -cellsize, 90]; //left-top
     var params = {
         image        : Image,
         description  : task,
