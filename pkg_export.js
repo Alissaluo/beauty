@@ -68,7 +68,7 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
         features = features.map(function(f) { return f.buffer(distance);});
     }
 
-    var image = ee.Image(ImgCol.first().select(0));
+    var image = ee.Image(ImgCol.first()).select(0);
     var prj   = image.projection(), 
         scale = prj.nominalScale();
     var options = { collection: features, reducer: reducer, crs: prj, scale: scale, tileScale: 16 };
@@ -101,6 +101,7 @@ function spClipImgCol(ImgCol, points, name, scale, buffer, folder, fileFormat){
         scale  = prj.nominalScale();
     
     var dists  = buffer ? [0] : [0, 1, 2];
+    var dist;
     scale = ee.Number(scale);
 
     ImgCol = ee.ImageCollection(ImgCol);
