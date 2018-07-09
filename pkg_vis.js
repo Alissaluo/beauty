@@ -194,7 +194,7 @@ function layout(n, ncol, nrow, byrow){
     var s = 0, k; //sum
     var panels_row = [];
     
-    if (flow === 'vertical'){
+    if (!byrow){
         // swop value of nrow and ncol
         var temp = nrow; 
         nrow = ncol; ncol = temp;
