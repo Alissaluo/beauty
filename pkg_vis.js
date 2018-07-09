@@ -179,7 +179,7 @@ function add_lgds(lgds, map) {
  *                        order; otherwise, in vertical order.
  * @return maps
  */
-function layout(n, ncol, nrow, byrow){
+function layout(n, nrow, ncol, byrow){
     n    = n || 2;
     ncol = ncol || Math.ceil(Math.sqrt(n));
     nrow = nrow || Math.ceil(n/ncol);
