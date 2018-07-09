@@ -54,30 +54,42 @@ var InnerJoin = function(primary, secondary, filter, join) {
 };
 
 /**
- * Left ImageCollection will apply ImgFun to the right. Firstly ImageCollection 
- * was matched by system:time_start.
- *
- * @param {ImageCollection} primary   [description]
- * @param {ImageCollection} secondary [description]
- * @param {function}        ImgFun    Image manipulating function, such as Img_absdiff
- * @return {ImageCollection}       [description]
- */ 
-var ImgColFun = function(primary, secondary, ImgFun){
+ * Left ImageCollection will apply ImgFun to the right. By default, ImageCollection 
+ * is matched by system:time_start.
+ * 
+ * @param {[type]} primary    [description]
+ * @param {[type]} secondary  [description]
+ * @param {[type]} ImgFun     Image manipulating function, i.e. `Img_absdiff`, 
+ *                            `Img_diff` and etc.
+ * @param {[type]} expression For the extension for \code{expression} function
+ * @param {[type]} map        For the extension for \code{expression} function
+ */
+var ImgColFun = function(primary, secondary, ImgFun, expression, map){
     // Map a function to merge the results in the output FeatureCollection.
     var joinedImgCol = ee.Join.saveBest('matches', 'measure')
         .apply(primary, secondary, filterTimeEq)
         .map(function(img) { 
             var right = ee.Image(img.get('matches'));
             var left  = img.set('matches', null);
-            return ImgFun(left, right)
+            return ImgFun(left, right, expression, map)
                 .copyProperties(left, left.propertyNames());
         });
     return joinedImgCol;
 };
 
-var Img_absdiff = function(left, right){
+/** two images absolute difference */
+var Img_absdiff = function(left, right, expression, map){
     return ee.Image(left).subtract(right).abs();
 };
+
+/** two images difference */
+var Img_diff = function(left, right, expression, map){
+    return ee.Image(left).subtract(right);
+};
+
+// var Img_expr = function(left, right){
+//     return ee.Image(left).expression(expression, map);
+// };
 
 /**
  * Resample 8days, 4 days ImageCollections to daily according to Join.saveBest 
@@ -109,5 +121,6 @@ exports = {
     InnerJoin      : InnerJoin,
     ImgColFun      : ImgColFun,
     Img_absdiff    : Img_absdiff,
+    Img_diff       : Img_diff,
     resampleToDaily: resampleToDaily
 };

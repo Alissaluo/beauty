@@ -58,7 +58,7 @@ var MOD13Q1 = ee.ImageCollection("MODIS/006/MOD13Q1"),
  * Updated 10 Jan, 2018
  * Dongdong Kong, Sun Yat-sen Univ
  */ 
- var pkg_vis    = require('users/kongdd/public:pkg_vis.js');
+var pkg_vis    = require('users/kongdd/public:pkg_vis.js');
 var points     = require('users/kongdd/public:data/flux_points.js').points;
 var points_buf = points.map(function(f) { return f.buffer(500);});
 
