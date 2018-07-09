@@ -115,14 +115,16 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
 }
 
 /** multiple bands image convert to imgcol */
-function bandsToImgCol(img){
+function bandsToImgCol(img, bandname){
+    bandname = bandname || "b"
+    
     img = ee.Image(img);
     var names = img.bandNames();
     var n     = names.size();
     
     var imgcol = ee.ImageCollection(names.map(function(name){
         var date = ee.Date.parse('YYYY_MM_dd', ee.String(name).slice(1, 11));
-        return img.select([name], ['Lai'])
+        return img.select([name], [bandname])
             .set('system:time_start', date.millis())
             // .set('system:time_end', beginDate.advance(1, 'day').millis())
             .set('system:id', date.format('yyyy_MM_dd'))
