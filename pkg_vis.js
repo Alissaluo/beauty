@@ -173,21 +173,33 @@ function add_lgds(lgds, map) {
  * layout function similar as layout in R language
  * 
  * @param n How many maps to draw
- * @param ncol 
- * @param nrow
- * 
+ * @param {integer} ncol columns 
+ * @param {integer} nrow rows
+ * @param {boolean} byrow By defaulf byrow = T, maps are arranged in horizontal 
+ *                        order; otherwise, in vertical order.
  * @return maps
  */
-function layout(n, ncol, nrow){
+function layout(n, ncol, nrow, byrow){
     n    = n || 2;
     ncol = ncol || Math.ceil(Math.sqrt(n));
     nrow = nrow || Math.ceil(n/ncol);
+    if (byrow === undefined) byrow = true;
     
     var maps = [], map;
     for (var i = 0; i < n; i++) maps.push(ui.Map());
 
+    var flow_first  = byrow ? 'horizontal' : 'vertical'; // 'vertical'
+    var flow_second = byrow ? 'vertical'   : 'horizontal';
+    
     var s = 0, k; //sum
     var panels_row = [];
+    
+    if (flow === 'vertical'){
+        // swop value of nrow and ncol
+        var temp = nrow; 
+        nrow = ncol; ncol = temp;
+    }
+
     for (var i = 0; i < nrow; i++) {
         var panels_col = [];
         for (var j = 0; j < ncol; j++) {
@@ -195,11 +207,11 @@ function layout(n, ncol, nrow){
             if (k >= n) break;
             panels_col.push(maps[k]);
         }
-        panels_row[i]  = ui.Panel(panels_col, ui.Panel.Layout.Flow('horizontal'), { stretch: 'both' });    
+        panels_row[i]  = ui.Panel(panels_col, ui.Panel.Layout.Flow(flow_first), { stretch: 'both' });    
     }
     
     var linker = ui.Map.Linker(maps);
-    var Panel  = ui.Panel(panels_row, ui.Panel.Layout.Flow('vertical'), { stretch: 'both' });
+    var Panel  = ui.Panel(panels_row, ui.Panel.Layout.Flow(flow_second), { stretch: 'both' });
     
     ui.root.clear();
     ui.root.add(Panel);
