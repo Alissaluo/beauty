@@ -67,7 +67,7 @@ var InnerJoin = function(primary, secondary, filter, join) {
 var ImgColFun = function(primary, secondary, ImgFun, expression, map){
     // Map a function to merge the results in the output FeatureCollection.
     var joinedImgCol = ee.Join.saveBest('matches', 'measure')
-        .apply(primary, secondary, pkg_join.filterTimeEq)
+        .apply(primary, secondary, filterTimeEq);
         // .aside(print);
     // var img = ee.Image(joinedImgCol.first());
     var res = joinedImgCol.map(function(img) { 
