@@ -80,27 +80,43 @@ function modweight_bisquare_array(re, w) {
 }
 
 /** 
- * [replace_mask description]
+ * replace img masked region with newimg
  *
- * img.where can't directy replace masked values
+ * Note: `where` can't directy replace masked values. `unmask` is necessary!
+ *
+ * fixed 2018-07-11 : Nodata out of data type range
+ * 
  * @param  {[type]} img    [description]
  * @param  {[type]} newimg [description]
+ * @param  {double} NODATA Note that NODATA is in the valid range of INPUT data type.
+ * 
  * @return {[type]}        [description]
  */
 function replace_mask(img, newimg) {
-    img = img.unmask(-999);
-    img = img.where(img.eq(-999), newimg);
-    img = img.updateMask(img.neq(-999));
+    // var con = img.mask();
+    // var res = img., NODATA
+    var mask = img.mask();
+    
+    img = img.expression("img*mask + newimg*(!mask)", {
+        img    : img.unmask(),  // default unmask value is zero
+        newimg : newimg, 
+        mask   : mask
+    });
+
+    // NODATA = NODATA || -999;
+    // img = img.unmask(NODATA);
+    // img = img.where(img.eq(NODATA), newimg);
+    // img = img.updateMask(img.neq(NODATA));
     return img;
 }
 
 /** Interpolation not considering weights */
-var addTimeBand = function(img) {
+function addTimeBand(img) {
     /** make sure mask is consistent */
     var mask = img.mask();
     var time = img.metadata('system:time_start').rename("time").mask(mask);
     return img.addBands(time);
-};
+}
 
 function linearInterp(imgcol, frame){
     if (typeof frame === 'undefined') { frame = 32; }
@@ -157,20 +173,20 @@ function linearInterp(imgcol, frame){
         var qc = img.mask().not().rename('qc');
         interp = replace_mask(img, interp);
         // Map.addLayer(interp, {}, 'interp');
-        return interp.addBands(qc).copyProperties(img, ['system:time_start', 'system:id']);
+        return interp.addBands(qc).copyProperties(img, img.propertyNames());
     }));
     return interpolated;
 }
 
 /** all those interpolation functions are just designed for 8-day temporal scale */
 function historyInterp(imgcol, imgcol_his_mean, prop){
-    if (typeof prop === 'undefined') { prop = 'd8'; }
+    if (typeof prop === 'undefined') { prop = 'dn'; }
     // var imgcol_his_mean = pkg_trend.aggregate_prop(imgcol.select(0), prop, 'median');
     
     var f = ee.Filter.equals({leftField:prop, rightField:prop});
     var c = ee.Join.saveAll({matchesKey:'history', ordering:'system:time_start', ascending:true})
         .apply(imgcol, imgcol_his_mean, f);
-    // print(c);
+    // print(c, 'c');
     
     var interpolated = ee.ImageCollection(c.map(function(img) {
         img = ee.Image(img);
@@ -184,7 +200,8 @@ function historyInterp(imgcol, imgcol_his_mean, prop){
         
         qc = qc.add(img.mask().not()); // 0:good value, 1:linear interp; 2:his interp
         var interp  = replace_mask(img, history);
-        return interp.addBands(qc);//.copyProperties(img, ['system:time_start', 'system:id', prop]);
+        return interp.addBands(qc).copyProperties(img, img.propertyNames());
+        //.copyProperties(img, ['system:time_start', 'system:id', prop]);
     }));
     // print(interpolated, 'interpolated');
     return interpolated;

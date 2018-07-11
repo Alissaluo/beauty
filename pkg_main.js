@@ -1,7 +1,3 @@
-/**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var imgcol_lai_raw = ee.ImageCollection("projects/pml_evapotranspiration/PML_INPUTS/MODIS/LAI_whit_4d"),
-    imgcol_lai_org = ee.ImageCollection("MODIS/006/MCD15A3H");
-/***** End of imports. If edited, may not auto-convert in the playground. *****/
 // var pkg_main   = require('users/kongdd/public:pkg_main.js');
 var global_prop = ['system:id', 'system:time_start', 'system:time_end']; //, 'system:index'
 var points = require('users/kongdd/public:data/flux_points.js').points;
@@ -158,6 +154,24 @@ var getQABits = function(image, start, end, newName) {
                   .rightShift(start);
 };
 
+/** 
+ * qc2bands 
+ * 
+ * convert QC value to mutiple bands, only suit for 'SummaryQA'
+ */
+var qc2bands = function(img, band_qc){
+    band_qc = band_qc || 'SummaryQA';
+    var qc = img.select(band_qc); // missing value is ignored
+    
+    var good   = qc.updateMask(qc.eq(0)).rename('good');
+    var margin = qc.updateMask(qc.eq(1)).rename('margin');
+    var snow   = qc.updateMask(qc.eq(2)).rename('snow'); // snow or ice
+    var cloud  = qc.updateMask(qc.eq(3)).rename('cloud');
+    
+    return ee.Image([good, margin, snow, cloud])
+        .copyProperties(img, ['system:time_start']);
+}
+
 exports = {
     global_prop     : global_prop,
     addYearProp     : addYearProp,
@@ -170,4 +184,5 @@ exports = {
     array2imgcol    : array2imgcol,
     bandsToImgCol   : bandsToImgCol,
     getQABits       : getQABits,
+    qc2bands        : qc2bands,
 };
