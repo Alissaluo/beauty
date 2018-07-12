@@ -82,15 +82,15 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
  *
  * @param  {[type]} ImgCol     [description]
  * @param  {[type]} points     [description]
- * @param  {[type]} name       [description]
  * @param  {[type]} scale      scale only used to generate buffer distance. 
  * `reduceRegions` use image.projection().nominalScale() as scale.
+ * @param  {[type]} name       [description]
  * @param  {[type]} buffer     [description]
  * @param  {[type]} folder     [description]
  * @param  {[type]} fileFormat [description]
  * @return {[type]}            [description]
  */
-function spClipImgCol(ImgCol, points, name, scale, buffer, folder, fileFormat){
+function spClipImgCol(ImgCol, points, scale, name, buffer, folder, fileFormat){
     scale      = scale      || scale;
     buffer     = buffer     || false;
     folder     = folder     || "";
@@ -98,15 +98,15 @@ function spClipImgCol(ImgCol, points, name, scale, buffer, folder, fileFormat){
 
     var image  = ee.Image(ImgCol.first()), 
         prj    = image.projection(), 
-        scale  = prj.nominalScale();
+        scale  = prj.nominalScale().getInfo();
     
     var dists  = buffer ? [0] : [0, 1, 2];
     var dist;
-    scale = ee.Number(scale);
+    // scale = ee.Number(scale);
 
     ImgCol = ee.ImageCollection(ImgCol);
     for(var i = 0; i < dists.length; i++){
-        dist = scale.multiply(dists[i]);
+        dist = scale*dists[i];
         file = ''.concat(name).concat('_').concat(dist).concat('m_buffer');//fluxsites_
         clipImgCol(ImgCol, points, dist, reducer, list, save, file, folder, fileFormat); //geojson
     }  

@@ -85,6 +85,7 @@ function modweight_bisquare_array(re, w) {
  * Note: `where` can't directy replace masked values. `unmask` is necessary!
  *
  * fixed 2018-07-11 : Nodata out of data type range
+ * fixed 2018-07-13 : data type change
  * 
  * @param  {[type]} img    [description]
  * @param  {[type]} newimg [description]
@@ -97,15 +98,16 @@ function replace_mask(img, newimg) {
     // var res = img., NODATA
     var mask = img.mask();
     
-    img = img.expression("img*mask + newimg*(!mask)", {
-        img    : img.unmask(),  // default unmask value is zero
-        newimg : newimg, 
-        mask   : mask
-    });
+    // img = img.expression("img*mask + newimg*(!mask)", {
+    //     img    : img.unmask(),  // default unmask value is zero
+    //     newimg : newimg, 
+    //     mask   : mask
+    // });
 
     // NODATA = NODATA || -999;
-    // img = img.unmask(NODATA);
-    // img = img.where(img.eq(NODATA), newimg);
+    img = img.unmask();
+    img = img.where(mask.not(), newimg);
+    // mask already in newimg, so it's unnecessary to updateMask again
     // img = img.updateMask(img.neq(NODATA));
     return img;
 }
