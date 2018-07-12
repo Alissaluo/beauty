@@ -1,6 +1,14 @@
 //var pkg_smooth     = require('users/kongdd/public:Math/pkg_smooth.js')
 var pkg_trend = require('users/kongdd/public:Math/pkg_trend.js');
 
+/**
+ * updates:
+ * --------
+ * 2018-07-13
+ * 1. fix the error of replace_mask, which can lead to interpolation not work.
+ * 
+ */
+
 function setweights(ImgCol, bound) {
     if (typeof bound === 'undefined') {
         var alpha = 1; //unit: %
@@ -93,22 +101,33 @@ function modweight_bisquare_array(re, w) {
  * 
  * @return {[type]}        [description]
  */
-function replace_mask(img, newimg) {
+
+function replace_mask(img, newimg, nodata) {
+    nodata   = nodata || 0;
+    
     // var con = img.mask();
     // var res = img., NODATA
     var mask = img.mask();
     
+    /** 
+     * This solution lead to interpolation fails | 2018-07-12
+     * Good vlaues can become NA.
+     */
     // img = img.expression("img*mask + newimg*(!mask)", {
     //     img    : img.unmask(),  // default unmask value is zero
     //     newimg : newimg, 
     //     mask   : mask
     // });
 
-    // NODATA = NODATA || -999;
+    /** The only nsolution is unmask & updatemask */
     img = img.unmask();
     img = img.where(mask.not(), newimg);
-    // mask already in newimg, so it's unnecessary to updateMask again
-    // img = img.updateMask(img.neq(NODATA));
+    // 
+    // error 2018-07-13 : mask already in newimg, so it's unnecessary to updateMask again
+    // either test or image is masked, values will not be changed. So, newimg 
+    // mask can transfer to img. 
+    // 
+    img = img.updateMask(img.neq(nodata));
     return img;
 }
 
@@ -120,8 +139,10 @@ function addTimeBand(img) {
     return img.addBands(time);
 }
 
-function linearInterp(imgcol, frame){
-    if (typeof frame === 'undefined') { frame = 32; }
+function linearInterp(imgcol, frame, nodata){
+    frame  = frame  || 32;
+    nodata = nodata || 0;
+
     // var frame = 32;
     var time   = 'system:time_start';
     imgcol = imgcol.map(addTimeBand);
@@ -156,8 +177,8 @@ function linearInterp(imgcol, frame){
         
         img = img.set('before', null).set('after', null);
         // constrain after or before no NA values, confirm linear Interp having result
-        before = replace_mask(before, after);
-        after  = replace_mask(after , before);
+        before = replace_mask(before, after, nodata);
+        after  = replace_mask(after , before, nodata);
         
         // Compute the ratio between the image times.
         var x1 = before.select('time').double();
@@ -173,7 +194,7 @@ function linearInterp(imgcol, frame){
         // var mask   = img.select([0]).mask();
         
         var qc = img.mask().not().rename('qc');
-        interp = replace_mask(img, interp);
+        interp = replace_mask(img, interp, nodata);
         // Map.addLayer(interp, {}, 'interp');
         return interp.addBands(qc).copyProperties(img, img.propertyNames());
     }));
@@ -181,10 +202,11 @@ function linearInterp(imgcol, frame){
 }
 
 /** all those interpolation functions are just designed for 8-day temporal scale */
-function historyInterp(imgcol, imgcol_his_mean, prop){
-    if (typeof prop === 'undefined') { prop = 'dn'; }
+function historyInterp(imgcol, imgcol_his_mean, prop, nodata){
+    prop   = prop   || 'dn';
+    nodata = nodata || 0;
+
     // var imgcol_his_mean = pkg_trend.aggregate_prop(imgcol.select(0), prop, 'median');
-    
     var f = ee.Filter.equals({leftField:prop, rightField:prop});
     var c = ee.Join.saveAll({matchesKey:'history', ordering:'system:time_start', ascending:true})
         .apply(imgcol, imgcol_his_mean, f);
@@ -201,7 +223,7 @@ function historyInterp(imgcol, imgcol_his_mean, prop){
         img    = img.select(0);
         
         qc = qc.add(img.mask().not()); // 0:good value, 1:linear interp; 2:his interp
-        var interp  = replace_mask(img, history);
+        var interp  = replace_mask(img, history, nodata);
         return interp.addBands(qc).copyProperties(img, img.propertyNames());
         //.copyProperties(img, ['system:time_start', 'system:id', prop]);
     }));
