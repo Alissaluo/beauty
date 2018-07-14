@@ -18,7 +18,7 @@
  * 250));
  */
 function mh_Buffer(options, list) {
-    list = list || F;
+    list = list || false;
     if (list){
         // ee.Reducer.toList() result contains geometry, need to remove it.
         // features' band properties have already could distinguish each other.
@@ -62,11 +62,7 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
     fileFormat = fileFormat || "GeoJSON";
     reducer    = reducer    || "first";
 
-    // If distance > 0, buffer will be applied to `features`
-    if (distance > 0){
-        reducer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames()); 
-        features = features.map(function(f) { return f.buffer(distance);});
-    }
+    if (distance > 0) features = features.map(function(f) { return f.buffer(distance);});
 
     var image = ee.Image(ImgCol.first()).select(0);
     var prj   = image.projection(), 
@@ -85,33 +81,49 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
  * @param  {[type]} scale      scale only used to generate buffer distance. 
  * `reduceRegions` use image.projection().nominalScale() as scale.
  * @param  {[type]} name       [description]
+ * @param  {ee.Reducer} reducers 2*1 reducer, the first one is for no buffer 
+ * situation; the second is for buffer. If reduces length is 1, then default
+ * reducer for buffer is 'toList' when \code{list} = true.
  * @param  {[type]} buffer     [description]
  * @param  {[type]} folder     [description]
  * @param  {[type]} fileFormat [description]
  * @return {[type]}            [description]
  */
-function spClipImgCol(ImgCol, points, scale, name, buffer, folder, fileFormat){
-    scale      = scale      || scale;
+function spClipImgCol(ImgCol, points, scale, name, reducers, list, buffer, folder, fileFormat){
     buffer     = buffer     || false;
     folder     = folder     || "";
     fileFormat = fileFormat || "csv";
+    if (list == undefined) list = true; 
 
     var image  = ee.Image(ImgCol.first()), 
-        prj    = image.projection(), 
-        scale  = prj.nominalScale().getInfo();
-    
-    var dists  = buffer ? [0] : [0, 1, 2];
-    var dist;
-    // scale = ee.Number(scale);
+        prj    = image.projection();
 
+    // scale only used to decide \code{dist}
+    scale  = scale || prj.nominalScale().getInfo(); 
+    
+    var dists  = buffer ? [0, 1, 2] : [0];
+    var dist, reducer, reducer_buffer,
+        reducer_nobuffer = reducers[0];
+
+    // reduce for buffer
+    if (reducers.length > 1){
+        reducer_buffer = reducers[1];
+    } else {
+        reducer_buffer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames());             
+    }
+
+    // scale = ee.Number(scale);
     ImgCol = ee.ImageCollection(ImgCol);
     for(var i = 0; i < dists.length; i++){
         dist = scale*dists[i];
-        file = ''.concat(name).concat('_').concat(dist).concat('m_buffer');//fluxsites_
+        // If distance > 0, buffer will be applied to `features`
+        reducer = dist > 0 ? reducer_nobuffer : reducer_buffer;  
+     
+        file = name.concat('_').concat(Math.floor(dist)).concat('m_buffer');//fluxsites_
+        // pkg_export.
         clipImgCol(ImgCol, points, dist, reducer, list, save, file, folder, fileFormat); //geojson
     }  
 }
-
 
 /**
  * Export_table
