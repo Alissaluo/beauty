@@ -110,23 +110,29 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
     // return pkg_main.setImgProperties(img, beginDate);  
 }
 
-/** multiple bands image convert to imgcol */
+/**
+ * multiple bands image convert to image list
+ *
+ * @param  {[type]} img      multiple bands image
+ * @param  {[type]} bandname the new bandname
+ * @return {ee.List}         List of images
+ */
 function bandsToImgCol(img, bandname){
-    bandname = bandname || "b"
+    bandname = bandname || "b1"
     
     img = ee.Image(img);
-    var names = img.bandNames();
+    var names = img.bandNames(); // ee.List
     var n     = names.size();
     
-    var imgcol = ee.ImageCollection(names.map(function(name){
+    var imgcol_lst = names.map(function(name){
         var date = ee.Date.parse('YYYY_MM_dd', ee.String(name).slice(1, 11));
         return img.select([name], [bandname])
             .set('system:time_start', date.millis())
             // .set('system:time_end', beginDate.advance(1, 'day').millis())
             .set('system:id', date.format('yyyy_MM_dd'))
             .set('system:index', date.format('yyyy_MM_dd'));
-    }));
-    return imgcol;
+    });
+    return imgcol_lst;
 }
 
 /**
