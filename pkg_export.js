@@ -250,16 +250,14 @@ function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTrans
  * Requires "crs" to be defined.
  * @param {[type]} prefix    The prefix of the exported file name.
  */
-function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsTransform, prefix){
-    
-    if (typeof dateList === 'undefined'){
-        /** 
-         * If dateList was undefined, this function is low efficient.
-         * ee.ImageCollection.toList() is quite slow, often lead to time out.
-         */
-        dateList = ee.List(ImgCol.aggregate_array('system:time_start'))
-            .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
-    }
+function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsTransform, prefix){    
+    /** 
+     * If dateList was undefined, this function is low efficient.
+     * ee.ImageCollection.toList() is quite slow, often lead to time out.
+     */
+    dateList = dateList || ee.List(ImgCol.aggregate_array('system:time_start'))
+        .map(function(date){ return ee.Date(date).format('yyyy-MM-dd'); }).getInfo();
+
     type   = type   || 'drive';
     crs    = crs    || 'SR-ORG:6974';
     prefix = prefix || '';
