@@ -166,20 +166,22 @@ function clip(ImgCol, poly){
 /**
  * ExportImage_deg
  *
- * @param {ee.Image} Image     [description]
- * @param {[type]} range     [lon_min, lat_min, lon_max, lat_max], e.g. [70, 15,
- * 120, 40]
- * @param {[type]} task      [description]
- * @param {[type]} cellsize  [description]
- * @param {[type]} type      [description]
- * @param {[type]} folder    [description]
- * @param {[type]} crs       [description]
- * @param {[type]} crs_trans [description]
+ * @param {ee.Image} Image     The image to export.
+ * @param {String} task      The file name of exported image
+ * @param {array.<number>}     range     [lon_min, lat_min, lon_max, lat_max]
+ * @param {double} cellsize  cellsize (in the unit of degree), used to calculate 
+ * dimension.
+ * @param {String} type      export type, i.e. 'asset', 'cloud' and 'drive'
+ * @param {String} folder    The Folder that the export will reside in. If 
+ * export type is cloud or asset, folder need to be absolute path.
+ * @param {String} crs       CRS to use for the exported image.
+ * @param {String} crsTransform  Affine transform to use for the exported image. 
+ * Requires "crs" to be defined.
  * 
  * @example
- * ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_trans)
+ * ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crs_trans)
  */
-function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_trans){
+function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTransform){
     var bounds; // define export region
 
     range  = range  || [-180, -60, 180, 90];
@@ -187,7 +189,7 @@ function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_tran
     folder = folder || "";
     crs    = crs    || 'SR-ORG:6974';
 
-    if (typeof crs_trans === 'undefined'){
+    if (typeof crsTransform === 'undefined'){
         bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
     }
 
@@ -199,12 +201,12 @@ function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_tran
 
     var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
 
-    // var crs_trans  = [cellsize, 0, -180, 0, -cellsize, 90]; //left-top
+    // var crsTransform  = [cellsize, 0, -180, 0, -cellsize, 90]; //left-top
     var params = {
         image        : Image,
         description  : task,
         crs          : crs,
-        crsTransform : crs_trans,
+        crsTransform : crsTransform,
         region       : bounds,
         dimensions   : dimensions,
         maxPixels    : 1e13
@@ -231,21 +233,25 @@ function ExportImg_deg(Image, range, task, cellsize, type, folder, crs, crs_tran
     }
     // print(params);
 }
+
 /**
- * ExportImgCol
+ * Batch export GEE ImageCollection
  *
- * Fast export ImgCol to drive
- *
- * @param {ImageCollection} ImgCol      The ImageCollection you want to export.
- * @param {ee.List}         dateList    A date List object store the
- * corresponding date of ImgCol. ImageCollection also can be accept.
- *
- * @param {List}            range       [lon_min, lat_min, lon_max, lat_max],
- * e.g. [70, 15, 120, 40]
- *
- * @param {float}           cellsize       cellsize in degree 
+ * @param {ee.ImageCollection} ImgCol    The ImageCollection to export.
+ * @param {array.<string>}     dateList  Corresponding date string list of ImgCol
+ * @param {array.<number>}     range     [lon_min, lat_min, lon_max, lat_max]
+ * @param {double} cellsize  cellsize (in the unit of degree), used to calculate 
+ * dimension.
+ * @param {String} type      export type, i.e. 'asset', 'cloud' and 'drive'
+ * @param {String} folder    The Folder that the export will reside in. If 
+ * export type is cloud or asset, folder need to be absolute path.
+ * @param {String} crs       CRS to use for the exported image.
+ * @param {String} crsTransform  Affine transform to use for the exported image. 
+ * Requires "crs" to be defined.
+ * @param {[type]} prefix    The prefix of the exported file name.
  */
-function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs){
+function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsTransform, prefix){
+    
     if (typeof dateList === 'undefined'){
         /** 
          * If dateList was undefined, this function is low efficient.
@@ -256,7 +262,8 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs){
     }
     type   = type   || 'drive';
     crs    = crs    || 'SR-ORG:6974';
-    
+    prefix = prefix || '';
+
     var n = dateList.length;
     
     for (var i = 0; i < n; i++) {
@@ -264,9 +271,9 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs){
         var date = dateList[i];
         var img  = ee.Image(ImgCol.filterDate(date).first()); 
         // var task = img.get('system:id');//.getInfo();
-        var task = date;
+        var task = prefix + date;
         print(task);
-        ExportImg_deg(img, range, task, cellsize, type, folder, crs); 
+        ExportImg_deg(img, task, range, cellsize, type, folder, crs, crsTransform); 
     }
 }
 
