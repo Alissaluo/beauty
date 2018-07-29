@@ -291,7 +291,7 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsT
 exports = {
     mh_Buffer    : mh_Buffer, // for img
     clipImgCol   : clipImgCol, // for ImgCol
-    getDimensions: getDimensions
+    getDimensions: getDimensions,
     ExportImg_deg: ExportImg_deg,
     Export_Table : Export_Table,
     clip         : clip,
