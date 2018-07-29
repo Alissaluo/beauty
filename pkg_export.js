@@ -163,6 +163,27 @@ function clip(ImgCol, poly){
   });
 }
 
+
+/**
+ * Get exported image dimensions
+ *
+ * @param {array.<number>}     range     [lon_min, lat_min, lon_max, lat_max]
+ * @param {double} cellsize  cellsize (in the unit of degree), used to calculate 
+ * dimension.
+ * 
+ * @return {String} WIDTHxHEIGHT
+ */
+function getDimensions(range, cellsize){
+    var step   = cellsize; // degrees
+    var sizeX  = (range[2] - range[0]) / cellsize;
+    var sizeY  = (range[3] - range[1]) / cellsize;
+    sizeX = Math.round(sizeX);
+    sizeY = Math.round(sizeY);
+
+    var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
+    return dimensions;
+}
+
 /**
  * ExportImage_deg
  *
@@ -193,14 +214,6 @@ function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTrans
         bounds = ee.Geometry.Rectangle(range, 'EPSG:4326', false); //[xmin, ymin, xmax, ymax]
     }
 
-    var step   = cellsize; // degrees
-    var sizeX  = (range[2] - range[0]) / cellsize;
-    var sizeY  = (range[3] - range[1]) / cellsize;
-    sizeX = Math.round(sizeX);
-    sizeY = Math.round(sizeY);
-
-    var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
-
     // var crsTransform  = [cellsize, 0, -180, 0, -cellsize, 90]; //left-top
     var params = {
         image        : Image,
@@ -208,7 +221,7 @@ function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTrans
         crs          : crs,
         crsTransform : crsTransform,
         region       : bounds,
-        dimensions   : dimensions,
+        dimensions   : getDimensions(range, cellsize),
         maxPixels    : 1e13
     };
 
@@ -276,13 +289,14 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsT
 }
 
 exports = {
-  mh_Buffer        :mh_Buffer,    // for img
-  clipImgCol       :clipImgCol,       // for ImgCol
-  ExportImg_deg    :ExportImg_deg,
-  Export_Table     :Export_Table,
-  clip             :clip,
-  ExportImgCol     :ExportImgCol,
-
-  global_range     :[-180, -60, 180, 90], //[long_min, lat_min, long_max, lat_max]
-  TP_range         :[73, 25, 105, 40],
+    mh_Buffer    : mh_Buffer, // for img
+    clipImgCol   : clipImgCol, // for ImgCol
+    getDimensions: getDimensions
+    ExportImg_deg: ExportImg_deg,
+    Export_Table : Export_Table,
+    clip         : clip,
+    ExportImgCol : ExportImgCol,
+    
+    global_range : [-180, -60, 180, 90], //[long_min, lat_min, long_max, lat_max]
+    TP_range     : [73, 25, 105, 40],
 };
