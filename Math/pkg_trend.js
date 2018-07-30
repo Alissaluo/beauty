@@ -173,10 +173,9 @@ function hour3Todaily(ImgCol, dailyImg_iters, reducer) {
 }
 
 function imgcol_addSeasonProb(imgcol){
-    return imgcol.map(function(img){
-        return addSeasonProb(img);
-    });
+    return imgcol.map( addSeasonProb(img) );
 }
+
 /**
  * aggregate_prop
  *

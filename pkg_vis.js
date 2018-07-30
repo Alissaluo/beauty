@@ -157,6 +157,17 @@ function discrete_legend(names, palette, title, IsPlot, position) {
     }
 }
 
+
+// Examples
+// var pkg_vis   = require('users/kongdd/public:pkg_vis.js');
+// var vis_vi   = {min: 0, max: 5000, palette:pkg_vis.colors.RdYlGn[11]};
+// var vis_diff = {min: 0, max: 1000, palette:pkg_vis.colors.RdBu[11]};
+
+// var lg_vi   = pkg_vis.grad_legend(vis_vi  , 'VI', false), 
+//     lg_diff = pkg_vis.grad_legend(vis_diff, 'diff', false); 
+
+// pkg_vis.add_lgds([lg_vi, lg_diff]);
+
 function add_lgds(lgds, map) {
     map = map || Map;
     lgds = ui.Panel({
@@ -217,7 +228,6 @@ function layout(n, nrow, ncol, byrow){
     ui.root.add(Panel);
     return maps;
 }
-
 
 // Palettes is copied from Jena
 // https://earthengine.googlesource.com/users/gena/packages
