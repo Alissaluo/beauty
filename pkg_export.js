@@ -76,14 +76,17 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
 /**
  * [spClipImgCol description]
  *
- * @param  {[type]} ImgCol     [description]
- * @param  {[type]} points     [description]
- * @param  {[type]} scale      scale only used to generate buffer distance. 
+ * @param  {ImageCollection}   imgcol     The ImageCollection to export.
+ * @param  {FeatureCollection} points     The FeatureCollection to clip \code{imgcol}
+ * @param  {Double} scale      scale only used to generate buffer distance. 
  * `reduceRegions` use image.projection().nominalScale() as scale.
- * @param  {[type]} name       [description]
+ * @param  {String} name       [description]
  * @param  {ee.Reducer} reducers 2*1 reducer, the first one is for no buffer 
  * situation; the second is for buffer. If reduces length is 1, then default
  * reducer for buffer is 'toList' when \code{list} = true.
+ * @param  {boolean} list       If list = false, any null value in feature will 
+ * lead to the feature being ignored. If list = true, value in csv will be 
+ * like that `[0.8]`.
  * @param  {[type]} buffer     [description]
  * @param  {[type]} folder     [description]
  * @param  {[type]} fileFormat [description]
@@ -183,6 +186,22 @@ function getDimensions(range, cellsize){
     var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
     return dimensions;
 }
+
+
+/** Get projection info of ee.Image or ee.ImageCollection */
+function getProj(img){
+    img = ee.ImageCollection(img).first();
+    var prj = img.select(0).projection();
+    var prj_dict = prj.getInfo();
+    
+    return {
+        prj:prj, 
+        scale:prj.nominalScale(),
+        crs:prj_dict.crs,
+        crsTransform: prj_dict.transform
+    };
+}
+
 
 /**
  * ExportImage_deg
@@ -289,14 +308,15 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsT
 }
 
 exports = {
-    mh_Buffer    : mh_Buffer, // for img
+    mh_Buffer    : mh_Buffer,  // for img
     clipImgCol   : clipImgCol, // for ImgCol
     getDimensions: getDimensions,
+    getProj      : getProj
     ExportImg_deg: ExportImg_deg,
     Export_Table : Export_Table,
     clip         : clip,
     ExportImgCol : ExportImgCol,
     
-    global_range : [-180, -60, 180, 90], //[long_min, lat_min, long_max, lat_max]
-    TP_range     : [73, 25, 105, 40],
+    range_global : [-180, -60, 180, 90], // [long_min, lat_min, long_max, lat_max]
+    range_TP     : [73, 25, 105, 40],    // Tibetan Plateau
 };

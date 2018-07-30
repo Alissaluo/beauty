@@ -119,7 +119,7 @@ function discrete_legend(names, palette, title, IsPlot, position) {
         value: title,
         style: {
             fontWeight: 'bold', fontSize: '14px',
-            margin: '0 0 4px 0', padding: '0'
+            margin: '0 0 2px 0', padding: '0'
         }
     });
     legend.add(legendTitle);
@@ -134,11 +134,11 @@ function discrete_legend(names, palette, title, IsPlot, position) {
             style: {
                 backgroundColor: color,
                 // Use padding to give the box height and width.
-                margin: '0 0 2px 0', padding: '8px'
+                margin: '0 0 1px 0', padding: '8px'
             }
         });
         // Create the label filled with the description text.
-        var description = ui.Label({ value: name, style: { margin: '0 0 4px 6px' } });
+        var description = ui.Label({ value: name, style: { margin: '0 0 1px 6px' } });
         return ui.Panel({
             widgets: [colorBox, description],
             layout: ui.Panel.Layout.Flow('horizontal')
