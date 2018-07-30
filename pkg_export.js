@@ -311,7 +311,7 @@ exports = {
     mh_Buffer    : mh_Buffer,  // for img
     clipImgCol   : clipImgCol, // for ImgCol
     getDimensions: getDimensions,
-    getProj      : getProj
+    getProj      : getProj,
     ExportImg_deg: ExportImg_deg,
     Export_Table : Export_Table,
     clip         : clip,
