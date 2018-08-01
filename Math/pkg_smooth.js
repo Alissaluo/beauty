@@ -101,7 +101,6 @@ function modweight_bisquare_array(re, w) {
  * 
  * @return {[type]}        [description]
  */
-
 function replace_mask(img, newimg, nodata) {
     nodata   = nodata || 0;
     
@@ -120,7 +119,7 @@ function replace_mask(img, newimg, nodata) {
     // });
 
     /** The only nsolution is unmask & updatemask */
-    img = img.unmask();
+    img = img.unmask(nodata);
     img = img.where(mask.not(), newimg);
     // 
     // error 2018-07-13 : mask already in newimg, so it's unnecessary to updateMask again

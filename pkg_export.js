@@ -307,6 +307,22 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsT
     }
 }
 
+function export_shp (features, file, folder, fileFormat){
+    folder     = folder || "";
+    fileFormat = fileFormat || 'shp';
+    
+    features = features.map(function(f) { return f.set('index', f.get('system:index')); } );
+    Export.table.toDrive({
+        collection:features, 
+        description:file, 
+        folder:folder, 
+        // fileNamePrefix, 
+        fileFormat:'shp'
+        // , selectors
+    });
+};
+
+
 exports = {
     mh_Buffer    : mh_Buffer,  // for img
     clipImgCol   : clipImgCol, // for ImgCol
@@ -316,7 +332,7 @@ exports = {
     Export_Table : Export_Table,
     clip         : clip,
     ExportImgCol : ExportImgCol,
-    
+    export_shp   : export_shp,
     range_global : [-180, -60, 180, 90], // [long_min, lat_min, long_max, lat_max]
     range_TP     : [73, 25, 105, 40],    // Tibetan Plateau
 };
