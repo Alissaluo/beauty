@@ -2,24 +2,44 @@
 var pkg_trend = require('users/kongdd/public:Math/pkg_trend.js');
 
 /**
- * updates:
- * --------
+ * Updates:
  * 2018-07-13
+ * ----------
  * 1. fix the error of replace_mask, which can lead to interpolation not work.
+ * 
+ * 2018-08-05
+ * ----------
+ * fix the error of setweights.
  * 
  */
 
-function setweights(ImgCol, bound) {
-    if (typeof bound === 'undefined') {
+/**
+ * setweights
+ *
+ * This is a rough weighting initial function. Only used for test.
+ * 
+ * @param  {ee.ImageCollection} ImgCol [description]
+ * @param  {ee.Image} bound  [description]
+ * @param  {Double}   ymin   [description]
+ * @return {ee.Image<array>} weights returned (2d image array)
+ */
+function setweights(ImgCol, bound, ymin) {
+    if (bound === undefined) {
         var alpha = 1; //unit: %
         bound = ImgCol.reduce(ee.Reducer.percentile([alpha/2, 100 - alpha/2]));
     } 
+    ymin = ymin || 0;
+
     var w = ImgCol.map(function(img) {
         // set weights to be one if points in the VI boundary
         // for LAI, low bound should be big than 0;
         var w = img.multiply(0);
-        w = w.where(img.lte(bound.select([1]))
-                       .or(img.gte(bound.select([0]).max(0))), 1); 
+        var con_norm = img.expression('b() >= min & b() <= max', 
+            { 
+                min: bound.select(0).max(ymin), // min should >= ymin 
+                max: bound.select(1) 
+            });
+        w = w.where(con_norm, 1);
         // x = ee.Number(x); //ee.Image when using for ImageCollections.
         // set weights of points out of boundary to zero
         // return ee.Algorithms.If(x.gt(bound.get(0)).or(x.lt(bound.get(1))), 1, 0);
