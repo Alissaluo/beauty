@@ -9,8 +9,9 @@ var pkg_trend = require('users/kongdd/public:Math/pkg_trend.js');
  * 
  * 2018-08-05
  * ----------
- * fix the error of setweights.
- * 
+ * 1. fix the error of setweights.
+ * 2. try to unify the common used functions module (e.g. weights updating 
+ *     function) in wSG and Whittaker.
  */
 
 /**
@@ -53,60 +54,69 @@ function setweights(ImgCol, bound, ymin) {
 }
 
 /**
-  * Modified weights of each points according to residual
-  *
-  * @description: Suggest to replaced NA values with a fixed number such as -99.
-  * Otherwise, it will introduce a large number of missing values in fitting
-  * result, for lowess, moving average, whittaker smoother and Savitzky-Golay
-  * filter.
-  *
-  * Robust weights are given by the bisquare function like lowess function
-  * Reference:
-  *     https://cn.mathworks.com/help/curvefit/smoothing-data.html#bq_6ys3-3.
-  * re = abs(Yobs - Ypred); % residual
-  * sc = 6 * median(re);    % overall scale estimate 
-  * w  = zeros(size(re)); 
-  * % w = ( 1 - ( re / sc ).^2 ).^2;
-  * w(re < sc) = ( 1 - ( re(re < sc) / sc ).^2 ).^2; %NAvalues weighting will be zero
-  *
-  * @param  {ImageCollection}  re  [description]
-  * @return {Array}            new weights according to residuals.
-  */ 
-function modweight_bisquare(re) {
-    re = ee.ImageCollection(re);
-    var median = re.reduce(ee.Reducer.percentile([50])); 
-    var sc = median.multiply(6.0);
-    
-    var w = re.map(function(res) {
-        var img = res.expression('pow(1 - pow(b()/sc, 2), 2)', {sc:sc}); 
-        return img.where(res.gte(sc), 0.0)
-            .copyProperties(res, ['system:id', 'system:index', 'system:time_start']);
-    });
-    w = w.toArray();//.toArray(1)
-    return w;
-}
-
-/**
- * Reference: https://cn.mathworks.com/help/curvefit/smoothing-data.html#bq_6ys3-3.
+ * Bisquare weights updating function
+ *
+ * Modified weights of each points according to residual.
+ * Suggest to replaced NA values with a fixed number such as ymin.
+ * Otherwise, it will introduce a large number of missing values in fitting
+ * result, for lowess, moving average, whittaker smoother and Savitzky-Golay
+ * filter.
+ *
+ * Robust weights are given by the bisquare function like lowess function
+ * Reference:
+ *     https://cn.mathworks.com/help/curvefit/smoothing-data.html#bq_6ys3-3.
+ * re = Ypred - Yobs;      % residual
+ * sc = 6 * median(abs(re));    % overall scale estimate 
+ * w  = zeros(size(re)); 
+ * I  = re < sc & re > 0
+ * 
+ * % only decrease the weight of overestimated values
+ * w(I) = ( 1 - (re(I)/sc).^2 ).^2; %NAvalues weighting will be zero
+ * % overestimated outliers and weights less than wmin, set to wmin
+ * w(w < wmin || re > sc) = wmin;
+ * 
+ * @param  {ee.Image<array>} re   residuals (predicted value - original value). re < 0
+ *                         means those values are overestimated. In order to 
+ *                         approach upper envelope reasonably, we only decrease 
+ *                         the weight of overestimated points.
+ * @param  {ee.Image<array>} w    Original weights
+ * @param  {Double}          wmin Minimum weight in weights updating procedure.
+ * @return {ee.Image<array>} wnew New weights returned.
  */
-function modweight_bisquare_array(re, w) {
-    var median = re.abs().arrayReduce(ee.Reducer.percentile([50]), [0]);
+function wBisquare_array(re, w, wmin) {
+    // This wmin is different from QC module, 
+    // When too much w approaches zero, it will lead to `matrixInverse` error. 
+    // Genius patch! 2018-07-28
+    wmin = wmin || 0.05; 
     
+    var median = re.abs().arrayReduce(ee.Reducer.percentile([50]), [0]);
     var sc = median.multiply(6.0).arrayProject([0]).arrayFlatten([['sc']]);
-    // Map.addLayer(re, {}, 're')
-    // Map.addLayer(sc, {}, 'median')
     
     var w_new = re.expression('pow(1 - pow(b()/sc, 2), 2)', { sc: sc });
-        
-    if (typeof w !== 'undefined'){
-        w_new = w_new.expression('(re >  0) * b() + (re <= 0)*w' , { re:re, w:w });
-    }
-    w_new = w_new.expression('(re >= sc)*0 + (re < sc) * b()', { sc:sc, re:re.abs() });
-    // Map.addLayer(w, {}, 'inside w');
     
+    // if w is not empty
+    if (w){
+        w_new = w_new.expression('(re >  0)*b()*w + (re <= 0)*w' , { re:re, w:w });
+    }
+    // overestimated outliers and weights less than wmin, set to wmin
+    w_new = w_new.expression('(re >= sc || b() < wmin)*wmin + (re < sc) * b()', 
+        { re:re, sc:sc, wmin:wmin});
     return w_new;
 }
 
+// function wBisquare(re) {
+//     re = ee.ImageCollection(re);
+//     var median = re.reduce(ee.Reducer.percentile([50])); 
+//     var sc = median.multiply(6.0); 
+//     var w = re.map(function(res) {
+//         var img = res.expression('pow(1 - pow(b()/sc, 2), 2)', {sc:sc}); 
+//         return img.where(res.gte(sc), 0.0)
+//             .copyProperties(res, ['system:id', 'system:index', 'system:time_start']);
+//     });
+//     w = w.toArray();//.toArray(1)
+//     return w;
+// }
+// 
 /** 
  * replace img masked region with newimg
  *
@@ -251,9 +261,8 @@ function historyInterp(imgcol, imgcol_his_mean, prop, nodata){
 }
 
 exports = {
-    setweights              :setweights,
-    modweight_bisquare      : modweight_bisquare,
-    modweight_bisquare_array: modweight_bisquare_array,
+    setweights              : setweights,
+    wBisquare_array         : wBisquare_array,
 
     replace_mask            : replace_mask,  
     historyInterp           : historyInterp,
