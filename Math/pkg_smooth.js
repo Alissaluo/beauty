@@ -35,7 +35,7 @@ function setweights(ImgCol, bound, ymin) {
         // set weights to be one if points in the VI boundary
         // for LAI, low bound should be big than 0;
         var w = img.multiply(0);
-        var con_norm = img.expression('b() >= min & b() <= max', 
+        var con_norm = img.expression('b() >= min && b() <= max', 
             { 
                 min: bound.select(0).max(ymin), // min should >= ymin 
                 max: bound.select(1) 
