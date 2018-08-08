@@ -100,16 +100,17 @@ function clipImgCol(ImgCol, features, distance, reducer, file, options){
  */
 // 
 // Example:
-// var options = {buffer:false, reducers:'first', list:true, save:true, 
+// var options = {buffer:false, reducers:['first'], list:true, save:true, 
 //      fileFormat:'geojson', folder:"", distance:0};
 // spClipImgCol(ImgCol, points, null, options)
-function spClipImgCol(ImgCol, points, file_prefix, options){
+function spClipImgCol(ImgCol, Features, file_prefix, options){
     file_prefix = file_prefix || "";
     var reducers   = options.reducers;             // 1th: non-buffer; 2th: buffer
     var buffer     = options.buffer     || false;  // whether to use buffer
-    
+    var list       = options.list       || false;
+
     var image  = ee.Image(ImgCol.first()), 
-        prj    = image.projection();
+        prj    = image.select(0).projection();
     // scale is used to decide buffer `dist` and filename
     var scale  = options.scale || prj.nominalScale().getInfo(); 
     
@@ -132,7 +133,7 @@ function spClipImgCol(ImgCol, points, file_prefix, options){
      
         file = file_prefix.concat('_').concat(Math.floor(dist)).concat('m_buffer');//fluxsites_
         // pkg_export.
-        pkg_export.clipImgCol(ImgCol, points, dist, reducer, file, options); //geojson
+        clipImgCol(ImgCol, Features, dist, reducer, file, options); //geojson
     }  
 }
 
@@ -334,6 +335,7 @@ function export_shp (features, file, folder, fileFormat){
 exports = {
     mh_Buffer    : mh_Buffer,  // for img
     clipImgCol   : clipImgCol, // for ImgCol
+    spClipImgCol : spClipImgCol,  
     getDimensions: getDimensions,
     getProj      : getProj,
     ExportImg_deg: ExportImg_deg,
