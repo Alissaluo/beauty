@@ -56,7 +56,12 @@ function mh_Buffer(options, list) {
  * @param  {Boolean} folder   [description]
  * @return {NULL}          [description]
  */
-function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folder, fileFormat){
+function clipImgCol(ImgCol, features, distance, reducer, file, options){
+    var folder     = options.folder     || "";     // drive forder
+    var fileFormat = options.fileFormat || "csv";  // 'csv' or 'geojson'
+    var list       = options.list       || false;
+    var save =  (options.save === undefined) ? true : options.save;
+
     distance   = distance   || 0;
     list       = list       || false; 
     fileFormat = fileFormat || "GeoJSON";
@@ -87,25 +92,29 @@ function clipImgCol(ImgCol, features, distance, reducer, list, save, file, folde
  * @param  {boolean} list       If list = false, any null value in feature will 
  * lead to the feature being ignored. If list = true, value in csv will be 
  * like that `[0.8]`.
+ * 
  * @param  {[type]} buffer     [description]
  * @param  {[type]} folder     [description]
  * @param  {[type]} fileFormat [description]
  * @return {[type]}            [description]
  */
-function spClipImgCol(ImgCol, points, scale, name, reducers, list, buffer, folder, fileFormat){
-    buffer     = buffer     || false;
-    folder     = folder     || "";
-    fileFormat = fileFormat || "csv";
-    if (list == undefined) list = true; 
-
+// 
+// Example:
+// var options = {buffer:false, reducers:'first', list:true, save:true, 
+//      fileFormat:'geojson', folder:"", distance:0};
+// spClipImgCol(ImgCol, points, null, options)
+function spClipImgCol(ImgCol, points, file_prefix, options){
+    file_prefix = file_prefix || "";
+    var reducers   = options.reducers;             // 1th: non-buffer; 2th: buffer
+    var buffer     = options.buffer     || false;  // whether to use buffer
+    
     var image  = ee.Image(ImgCol.first()), 
         prj    = image.projection();
-
-    // scale only used to decide \code{dist}
-    scale  = scale || prj.nominalScale().getInfo(); 
+    // scale is used to decide buffer `dist` and filename
+    var scale  = options.scale || prj.nominalScale().getInfo(); 
     
     var dists  = buffer ? [0, 1, 2] : [0];
-    var dist, reducer, reducer_buffer,
+    var file, dist, reducer, reducer_buffer,
         reducer_nobuffer = reducers[0];
 
     // reduce for buffer
@@ -114,17 +123,16 @@ function spClipImgCol(ImgCol, points, scale, name, reducers, list, buffer, folde
     } else {
         reducer_buffer  = list ? ee.Reducer.toList() : ee.Reducer.toCollection(ee.Image(ImgCol.first()).bandNames());             
     }
-
-    // scale = ee.Number(scale);
+  
     ImgCol = ee.ImageCollection(ImgCol);
     for(var i = 0; i < dists.length; i++){
         dist = scale*dists[i];
         // If distance > 0, buffer will be applied to `features`
         reducer = dist > 0 ? reducer_nobuffer : reducer_buffer;  
      
-        file = name.concat('_').concat(Math.floor(dist)).concat('m_buffer');//fluxsites_
+        file = file_prefix.concat('_').concat(Math.floor(dist)).concat('m_buffer');//fluxsites_
         // pkg_export.
-        clipImgCol(ImgCol, points, dist, reducer, list, save, file, folder, fileFormat); //geojson
+        pkg_export.clipImgCol(ImgCol, points, dist, reducer, file, options); //geojson
     }  
 }
 
