@@ -216,7 +216,8 @@ function aggregate_prop(ImgCol, prop, reducer, delta){
         
         var res = ee.Algorithms.If(delta, last.subtract(first), imgcol.reduce(reducer))
         return ee.Image(res)
-            .copyProperties(ee.Image(imgcol.first()), ['Year', 'YearStr', 'YearMonth', 'Season', 'dn', 'system:time_start'])
+            .copyProperties(ee.Image(imgcol.first()), 
+                ['Year', 'YearStr', 'YearMonth', 'Month', 'Season', 'dn', 'system:time_start'])
             .copyProperties(img, ['system:id', prop]);
     });
     return ee.ImageCollection(ImgCol_new);
