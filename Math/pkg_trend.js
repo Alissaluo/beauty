@@ -112,8 +112,7 @@ function add_dn_date(img, beginDate, IncludeYear, n){
     var diff  = beginDate.difference(ee.Date.fromYMD(year, 1, 1), 'day').add(1);
     var dn    = diff.subtract(1).divide(n).floor().add(1).int();
     
-    yearstr  = year.format('%d'); //ee.String(year);
-    monthstr = month.format('%02d');
+    var yearstr  = year.format('%d'); //ee.String(year);
     dn   = dn.format('%02d'); //ee.String(dn);
     dn   = ee.Algorithms.If(IncludeYear, yearstr.cat("-").cat(dn), dn);
     
@@ -122,7 +121,7 @@ function add_dn_date(img, beginDate, IncludeYear, n){
         // .set('system:time_end', beginDate.advance(1, 'day').millis())
         .set('system:id', beginDate.format('yyyy-MM-dd'))
         .set('Year', yearstr)
-        .set('Month', monthstr)
+        .set('Month', beginDate.format('MM'))
         .set('dn', dn); //add dn for aggregated into 8days
 }
 
