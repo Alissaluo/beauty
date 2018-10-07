@@ -1,4 +1,9 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var pkg_export = {};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 // var pkg_export = require('users/kongdd/public:pkg_export.js');
+
+
 
 /**
  * Clip image data of points buffer
@@ -17,28 +22,33 @@
  * var export_data = ImgCol.map(mh_BufferPoints(points, 250, reducer,
  * 250));
  */
-function mh_Buffer(options, list) {
-    list = list || false;
+pkg_export._Buffer = function(options) {
+    var reducer = options.reducer;
+    var list = typeof reducer === 'string' || reducer.getInfo().type !== 'Reducer.toCollection';
+    
+    // Only Reducer.toCollection is different, which has a features in property
     if (list){
         // ee.Reducer.toList() result contains geometry, need to remove it.
         // features' band properties have already could distinguish each other.
         return function(img){
             return img.reduceRegions(options)
-            .map(function(f){ 
-                return ee.Feature(null).copyProperties(f)
-                    .set('date', ee.Date(img.get('system:time_start')).format('yyyy-MM-dd'));
-            });
+                .map(function(f){ 
+                    return ee.Feature(null).copyProperties(f)
+                        .set('date', ee.Date(img.get('system:time_start')).format('yyyy-MM-dd'));
+                });
         };
     }else{
         return function(img){
             var data = img.reduceRegions(options)
-            .map(function(f){ return f.get('features'); }).flatten(); 
+                .map(function(f){ return f.get('features'); })
+                .flatten(); 
             // `ee.Reducer.toCollection` has no feature geometry, and cliped 
             // data are in FeatureCollection.
             return data;
         };
     }
-}
+};
+
 
 /**
  * Clip ImageCollection by points or polygons
@@ -56,15 +66,12 @@ function mh_Buffer(options, list) {
  * @param  {Boolean} folder   [description]
  * @return {NULL}          [description]
  */
-function clipImgCol(ImgCol, features, distance, reducer, file, options){
+pkg_export.clipImgCol = function(ImgCol, features, distance, reducer, file, options){
     var folder     = options.folder     || "";     // drive forder
     var fileFormat = options.fileFormat || "csv";  // 'csv' or 'geojson'
-    var list       = options.list       || false;
     var save =  (options.save === undefined) ? true : options.save;
 
     distance   = distance   || 0;
-    list       = list       || false; 
-    fileFormat = fileFormat || "GeoJSON";
     reducer    = reducer    || "first";
 
     if (distance > 0) features = features.map(function(f) { return f.buffer(distance);});
@@ -72,11 +79,12 @@ function clipImgCol(ImgCol, features, distance, reducer, file, options){
     var image = ee.Image(ImgCol.first()).select(0);
     var prj   = image.projection(), 
         scale = prj.nominalScale();
-    var options = { collection: features, reducer: reducer, crs: prj, scale: scale, tileScale: 16 };
+    var options_reduce = { collection: features, reducer: reducer, crs: prj, scale: scale, tileScale: 16 };
 
-    var export_data = ImgCol.map(mh_Buffer(options, list), true).flatten();
-    Export_Table(export_data, save, file, folder, fileFormat);
-}
+    var export_data = ImgCol.map(pkg_export._Buffer(options_reduce), true).flatten();
+    pkg_export.Export_Table(export_data, save, file, folder, fileFormat);
+};
+
 
 /**
  * [spClipImgCol description]
@@ -88,7 +96,8 @@ function clipImgCol(ImgCol, features, distance, reducer, file, options){
  * @param  {String} name       [description]
  * @param  {ee.Reducer} reducers 2*1 reducer, the first one is for no buffer 
  * situation; the second is for buffer. If reduces length is 1, then default
- * reducer for buffer is 'toList' when \code{list} = true.
+ * reducer for buffer is 'toList' when \code{list} = true. 
+ * If list = true, while reducer also is `toList`, error will be occured.
  * @param  {boolean} list       If list = false, any null value in feature will 
  * lead to the feature being ignored. If list = true, value in csv will be 
  * like that `[0.8]`.
@@ -98,16 +107,20 @@ function clipImgCol(ImgCol, features, distance, reducer, file, options){
  * @param  {[type]} fileFormat [description]
  * @return {[type]}            [description]
  */
-// 
 // Example:
-// var options = {buffer:false, reducers:['first'], list:true, save:true, 
-//      fileFormat:'geojson', folder:"", distance:0};
-// spClipImgCol(ImgCol, points, null, options)
-function spClipImgCol(ImgCol, Features, file_prefix, options){
+// var options = {
+//     reducers : ['first'],  // 1th: non-buffer; 2th: buffer; Only one means no buffer
+//     buffer   : true,      // whether to use buffer
+//     list     : false, 
+//     folder   : '', // drive forder
+//     fileFormat: 'csv'      // 'csv' or 'geojson'
+// };
+// pkg_export.spClipImgCol(imgcol, points, "imgcol_prefix", options)
+pkg_export.spClipImgCol = function(ImgCol, Features, file_prefix, options){
     file_prefix = file_prefix || "";
-    var reducers   = options.reducers;             // 1th: non-buffer; 2th: buffer
-    var buffer     = options.buffer     || false;  // whether to use buffer
-    var list       = options.list       || false;
+    var reducers   = options.reducers  || ['toList']; // 1th: non-buffer; 2th: buffer
+    var buffer     = options.buffer    || false;      // whether to use buffer
+    var list       = options.list      || false;
 
     var image  = ee.Image(ImgCol.first()), 
         prj    = image.select(0).projection();
@@ -129,13 +142,13 @@ function spClipImgCol(ImgCol, Features, file_prefix, options){
     for(var i = 0; i < dists.length; i++){
         dist = scale*dists[i];
         // If distance > 0, buffer will be applied to `features`
-        reducer = dist > 0 ? reducer_nobuffer : reducer_buffer;  
+        reducer = dist > 0 ? reducer_buffer : reducer_nobuffer ;  
      
         file = file_prefix.concat('_').concat(Math.floor(dist)).concat('m_buffer');//fluxsites_
-        // pkg_export.
-        clipImgCol(ImgCol, Features, dist, reducer, file, options); //geojson
+        pkg_export.clipImgCol(ImgCol, Features, dist, reducer, file, options); //geojson
     }  
-}
+};
+
 
 /**
  * Export_table
@@ -148,7 +161,7 @@ function spClipImgCol(ImgCol, Features, file_prefix, options){
  * @return {FeatureCollection} If save = false, will return FeatureCollection.
  * Otherwise, none will be return. 
  */
-function Export_Table(export_data, save, file, folder, fileFormat) {
+pkg_export.Export_Table = function(export_data, save, file, folder, fileFormat) {
     save       = save       || false;
     folder     = folder     || "";
     fileFormat = fileFormat || "GeoJSON";
@@ -159,7 +172,7 @@ function Export_Table(export_data, save, file, folder, fileFormat) {
         description : file,
         folder      : folder,
         fileFormat  : fileFormat //GeoJSON, CSV
-    }
+    };
 
     // If save, then export to drive, else print in the console
     if (save) {
@@ -167,13 +180,14 @@ function Export_Table(export_data, save, file, folder, fileFormat) {
     } else {
         print(file, export_data);
     }
-}
+};
 
-function clip(ImgCol, poly){
+
+pkg_export.clip = function(ImgCol, poly){
   return ImgCol.map(function(img){
       return img.clip(poly.geometry());
   });
-}
+};
 
 
 /**
@@ -185,7 +199,7 @@ function clip(ImgCol, poly){
  * 
  * @return {String} WIDTHxHEIGHT
  */
-function getDimensions(range, cellsize){
+pkg_export.getDimensions = function(range, cellsize){
     var step   = cellsize; // degrees
     var sizeX  = (range[2] - range[0]) / cellsize;
     var sizeY  = (range[3] - range[1]) / cellsize;
@@ -194,11 +208,11 @@ function getDimensions(range, cellsize){
 
     var dimensions = sizeX.toString() + 'x' + sizeY.toString(); //[sizeX, ]
     return dimensions;
-}
+};
 
 
 /** Get projection info of ee.Image or ee.ImageCollection */
-function getProj(img){
+pkg_export.getProj = function(img){
     img = ee.ImageCollection(img).first();
     var prj = img.select(0).projection();
     var prj_dict = prj.getInfo();
@@ -209,7 +223,7 @@ function getProj(img){
         crs:prj_dict.crs,
         crsTransform: prj_dict.transform
     };
-}
+};
 
 
 /**
@@ -230,7 +244,7 @@ function getProj(img){
  * @example
  * ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crs_trans)
  */
-function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTransform){
+pkg_export.ExportImg_deg = function(Image, task, range, cellsize, type, folder, crs, crsTransform){
     var bounds; // define export region
 
     range  = range  || [-180, -60, 180, 90];
@@ -273,7 +287,7 @@ function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTrans
             break;
     }
     // print(params);
-}
+};
 
 /**
  * Batch export GEE ImageCollection
@@ -291,7 +305,9 @@ function ExportImg_deg(Image, task, range, cellsize, type, folder, crs, crsTrans
  * Requires "crs" to be defined.
  * @param {[type]} prefix    The prefix of the exported file name.
  */
-function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsTransform, prefix){    
+pkg_export.ExportImgCol = function(ImgCol, dateList, range, cellsize, type, 
+    folder, crs, crsTransform, prefix)
+{    
     /** 
      * If dateList was undefined, this function is low efficient.
      * ee.ImageCollection.toList() is quite slow, often lead to time out.
@@ -312,11 +328,11 @@ function ExportImgCol(ImgCol, dateList, range, cellsize, type, folder, crs, crsT
         // var task = img.get('system:id');//.getInfo();
         var task = prefix + date;
         print(task);
-        ExportImg_deg(img, task, range, cellsize, type, folder, crs, crsTransform); 
+        pkg_export.ExportImg_deg(img, task, range, cellsize, type, folder, crs, crsTransform); 
     }
-}
+};
 
-function export_shp (features, file, folder, fileFormat){
+pkg_export.export_shp = function(features, file, folder, fileFormat){
     folder     = folder || "";
     fileFormat = fileFormat || 'shp';
     
@@ -332,17 +348,8 @@ function export_shp (features, file, folder, fileFormat){
 };
 
 
-exports = {
-    mh_Buffer    : mh_Buffer,  // for img
-    clipImgCol   : clipImgCol, // for ImgCol
-    spClipImgCol : spClipImgCol,  
-    getDimensions: getDimensions,
-    getProj      : getProj,
-    ExportImg_deg: ExportImg_deg,
-    Export_Table : Export_Table,
-    clip         : clip,
-    ExportImgCol : ExportImgCol,
-    export_shp   : export_shp,
-    range_global : [-180, -60, 180, 90], // [long_min, lat_min, long_max, lat_max]
-    range_TP     : [73, 25, 105, 40],    // Tibetan Plateau
-};
+pkg_export.range_global = [-180, -60, 180, 90]; // [long_min, lat_min, long_max, lat_max]
+pkg_export.range_TP     = [73, 25, 105, 40];    // Tibetan Plateau
+
+exports = pkg_export;
+// print('pkg_export', pkg_export)

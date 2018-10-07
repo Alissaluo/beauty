@@ -135,15 +135,16 @@ function bandsToImgCol(img, bandname){
     return imgcol_lst;
 }
 
+
 /**
- * Returns an image containing just the specified QA bits.
- *
- * Args:
- *   image - The QA Image to get bits from.
- *   start - The first bit position, 0-based.
- *   end   - The last bit position, inclusive.
- *   name  - A name for the output image.
- *
+ * Extract bitcoded QA information from a band and return it as an image.
+ * @param {image} QAImage An image with a single bit packed quality assurance
+ *     (QA) band.
+ * @param {integer} start The position of the starting bit.
+ * @param {integer} end The position of the ending bit.
+ * @param {string} newName The name given to the new band.
+ * @return {image} An image with the extracted QA parameter band.
+ * 
  * @usage
  * pkg_main.getQABits(image, start, end)
  */
@@ -159,6 +160,7 @@ var getQABits = function(image, start, end, newName) {
                   .bitwiseAnd(pattern)
                   .rightShift(start);
 };
+
 
 /** 
  * qc2bands 
