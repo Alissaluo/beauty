@@ -141,7 +141,7 @@ function debug(){
     
     // Map.addLayer(ImgCol_mov);
     
-    // // pkg_export.ExportImg_deg(img, range, 'PML_global_test2002_120deg', 1/12);
+    // // pkg_export.ExportImg(img, range, 'PML_global_test2002_120deg', 1/12);
     // print('Running here ...');
     // var daily_iters = ImgCol.toList(ImgCol.size()).map(function(img){
     //     return ee.Date(ee.Image(img).get('system:time_start'));

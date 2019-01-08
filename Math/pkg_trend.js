@@ -2,12 +2,13 @@
 
 // img should only have dependant band
 function createConstantBand(img) {
-  // img = ee.Image(img);
-    return img.addBands(ee.Image.constant(1)).addBands(img.metadata('Year'));
+    // img = ee.Image(img);
+    var year = ee.Image(ee.Number.parse(img.get('Year'))).toInt16();
+    return img.addBands(ee.Image([1, year]));
 }
 
 function linearTrend(ImgCol, robust){
-    if (typeof robust  === 'undefined'){ robust = false; }
+    if (robust  === undefined){ robust = false; }
     ImgCol = ImgCol.map(createConstantBand)
         .select([1, 2, 0], ['constant', 'Year', 'y']);
     
@@ -50,12 +51,12 @@ function linearTrend(ImgCol, robust){
 }
 
 function imgcol_trend(imgcol, band, robust){
-    if (typeof band   === 'undefined') {band = 0}
-    if (typeof robust === 'undefined') {robust = true}
+    if (band   === undefined) {band = 0;}
+    if (robust === undefined) {robust = true;}
     
     imgcol = imgcol.select(band).map(function(img){
         img = addSeasonProb(img);      // add seasonal variable
-        img = createConstantBand(img); // add constant and Year band
+        // img = createConstantBand(img); // add constant and Year band
         return img;
     });
     var trend = linearTrend(imgcol, robust); //ee.Image
@@ -71,7 +72,7 @@ function imgcol_trend(imgcol, band, robust){
  *                        If false, just as traditional seasons.
  */
 function addSeasonProb(img, pheno){
-    if (typeof pheno === 'undefined') {pheno = false}
+    if (pheno === undefined) {pheno = false;}
     
     var date  = ee.Date(img.get('system:time_start'));
     var month = date.get('month');
@@ -95,15 +96,15 @@ function addSeasonProb(img, pheno){
     }
     
     return img.set('Season', season)
-        .set('Year', year)
-        .set('YearStr', ee.String(year))
+        .set('Year', year.format())
+        .set('Month', month.format())
         .set('YearMonth', date.format('YYYY-MM')); //seasons.get(month.subtract(1))
 }
 
 /** add dn prop to every img */
 function add_dn_date(img, beginDate, IncludeYear, n){
-    if (typeof IncludeYear === 'undefined') { IncludeYear = true; }
-    if (typeof n === 'undefined') { n = 8; }
+    if (IncludeYear === undefined) { IncludeYear = true; }
+    n = n || 8;
 
     beginDate = ee.Date(beginDate);
     var year  = beginDate.get('year');
@@ -122,6 +123,7 @@ function add_dn_date(img, beginDate, IncludeYear, n){
         .set('system:id', beginDate.format('yyyy-MM-dd'))
         .set('Year', yearstr)
         .set('Month', beginDate.format('MM'))
+        .set('YearMonth', beginDate.format('YYYY-MM'))
         .set('dn', dn); //add dn for aggregated into 8days
 }
 
@@ -184,15 +186,15 @@ function imgcol_addSeasonProb(imgcol){
  * aggregate_prop
  *
  * @param  {[type]} ImgCol  [description]
- * @param  {[type]} prop    [description]
+ * @param  {[type]} prop    The value of "prop" should be string.
  * @param  {[type]} reducer [description]
- * @param  {boolean} delta  If delta = true, reducer will be ignore, and return 
+ * @param  {boolean} delta  If true, reducer will be ignore, and return 
  *                          Just deltaY = y_end - y_begin. (for dataset like GRACE)
  * @return {[type]}         [description]
  */
 function aggregate_prop(ImgCol, prop, reducer, delta){
-    if (typeof reducer === 'undefined') {reducer = 'mean'}
-    if (typeof delta   === 'undefined') {delta   = false}
+    if (typeof reducer === 'undefined') {reducer = 'mean';}
+    if (typeof delta   === 'undefined') {delta   = false;}
 
     var dates = ee.Dictionary(ImgCol.aggregate_histogram(prop)).keys()
     .map(function(p){
@@ -214,7 +216,7 @@ function aggregate_prop(ImgCol, prop, reducer, delta){
         var first = ee.Image(imgcol.first());
         var last  = imgcol_last(imgcol);
         
-        var res = ee.Algorithms.If(delta, last.subtract(first), imgcol.reduce(reducer))
+        var res = ee.Algorithms.If(delta, last.subtract(first), imgcol.reduce(reducer));
         return ee.Image(res)
             .copyProperties(ee.Image(imgcol.first()), 
                 ['Year', 'YearStr', 'YearMonth', 'Month', 'Season', 'dn', 'system:time_start'])

@@ -13,8 +13,9 @@
  * @return {[type]}           [description]
  *
  * @example
- * var label = ui.Label('text');
- * Map.add(label);
+ * var pkg_vis   = require('users/kongdd/public:pkg_vis.js');
+ * 
+ * var label = ui.Label('text'); Map.add(label);
  * pkg_vis.series(imgcol, {}, 'bandname', region, label);
  */
 function series(ImgCol, vis, name, region, label, scale) {
@@ -183,21 +184,21 @@ function add_lgds(lgds, map) {
 /**
  * layout function similar as layout in R language
  * 
- * @param n How many maps to draw
+ * @param nmap How many maps to draw
  * @param {integer} ncol columns 
  * @param {integer} nrow rows
  * @param {boolean} byrow By defaulf byrow = T, maps are arranged in horizontal 
  *                        order; otherwise, in vertical order.
  * @return maps
  */
-function layout(n, nrow, ncol, byrow){
-    n    = n || 2;
-    ncol = ncol || Math.ceil(Math.sqrt(n));
-    nrow = nrow || Math.ceil(n/ncol);
+function layout(nmap, nrow, ncol, byrow){
+    nmap    = nmap || 2;
+    ncol = ncol || Math.ceil(Math.sqrt(nmap));
+    nrow = nrow || Math.ceil(nmap/ncol);
     if (byrow === undefined) byrow = true;
     
     var maps = [], map;
-    for (var i = 0; i < n; i++) maps.push(ui.Map());
+    for (var i = 0; i < nmap; i++) maps.push(ui.Map());
 
     var flow_first  = byrow ? 'horizontal' : 'vertical'; // 'vertical'
     var flow_second = byrow ? 'vertical'   : 'horizontal';
@@ -215,7 +216,7 @@ function layout(n, nrow, ncol, byrow){
         var panels_col = [];
         for (var j = 0; j < ncol; j++) {
             k = i*ncol + j;
-            if (k >= n) break;
+            if (k >= nmap) break;
             panels_col.push(maps[k]);
         }
         panels_row[i]  = ui.Panel(panels_col, ui.Panel.Layout.Flow(flow_first), { stretch: 'both' });    
@@ -277,7 +278,7 @@ var Palettes = {
 /***
  * Show a preview for all color palettes, names, and maximum number of colors.
  */
-function showPalettes(colorCount) {
+function showColors(colorCount) {
   colorCount = colorCount || 3
   
   var scale = Map.getScale()
@@ -390,5 +391,5 @@ exports = {
     layout         : layout,
     add_lgds       : add_lgds,
     colors         : Palettes, 
-    showColors     : showPalettes
+    showColors     : showColors
 };

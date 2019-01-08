@@ -13,7 +13,7 @@
  * var ranges = SplitGrids(range, 2, 2, "prefix_"); 
  * print(ranges);
  * ranges.forEach(function(dict, ind){
- *     pkg_export.ExportImg_deg(img_out, dict.range, dict.file, 1/240, 'drive', "");
+ *     pkg_export.ExportImg(img_out, dict.range, dict.file, 1/240, 'drive', "");
  * });
  */
 function SplitGrids(range, nx, ny, prefix) {

@@ -57,7 +57,7 @@ function imgRegions(img, regions, name){
 }
 
 function imgcolRegion(imgcol, region, name){
-    var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegion(img, region, name)});
+    var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegion(img, region, name);});
     if (name !== undefined){
         print(name, vals);
     }
@@ -65,7 +65,7 @@ function imgcolRegion(imgcol, region, name){
 }
 
 function imgcolRegions(imgcol, regions, name){
-    var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegions(img, regions, name)});
+    var vals = ee.ImageCollection(imgcol).map(function(img){return imgRegions(img, regions, name);});
     if (name !== undefined){
         print(name, vals);
     }
@@ -118,7 +118,7 @@ function array2imgcol(mat, nrow, ncol, bands, dates){
  * @return {ee.List}         List of images
  */
 function bandsToImgCol(img, bandname){
-    bandname = bandname || "b1"
+    bandname = bandname || "b1";
     
     img = ee.Image(img);
     var names = img.bandNames(); // ee.List
@@ -178,7 +178,7 @@ var qc2bands = function(img, band_qc){
     
     return ee.Image([good, margin, snow, cloud])
         .copyProperties(img, ['system:time_start']);
-}
+};
 
 exports = {
     global_prop     : global_prop,
