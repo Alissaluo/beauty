@@ -14,6 +14,7 @@ var pkg_export = {};
  * @param  {[type]} scale    [description]
  * @param  {[type]} list     [description]
  * @param  {dict} options    other options for reduceRegions, e.g. crs, scale
+ * 
  * @return {[type]}          [description]
  * 
  * @examples
@@ -196,6 +197,9 @@ pkg_export.clip = function(ImgCol, poly){
  * dimension.
  * 
  * @return {String} WIDTHxHEIGHT
+ *
+ * @example
+ * pkg_export.getDimensions(range, cellsize)
  */
 pkg_export.getDimensions = function(range, cellsize){
     var step   = cellsize; // degrees
