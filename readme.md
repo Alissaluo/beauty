@@ -25,7 +25,7 @@ var pkg_vis  = require('users/kongdd/public:pkg_vis.js');
 Show available palettes provided by `pkg_vis`. This function is modified from [Gena](https://github.com/gena)‘s package.
 
 ```javascript
-pkg_vis.showColors()
+pkg_vis.showColors();
 ```
 
 ![](man/Figure/RColorBrewer.svg)   
@@ -36,7 +36,7 @@ pkg_vis.showColors()
 1. gradient legend
 
    ```javascript
-   useage: pkg_smooth.grad_legend(viz, title, IsPlot, position)
+   useage: pkg_vis.grad_legend(viz, title, IsPlot, position)
    
    - viz           Visualization parameters.
    - title         String, legend title.
@@ -48,7 +48,7 @@ pkg_vis.showColors()
 2. discrete legend
 
    ```javascript
-   useage: pkg_smooth.discrete_legend(names, palette, title, IsPlot, position)
+   useage: pkg_vis.discrete_legend(names, palette, title, IsPlot, position)
    
    - names         The name of every item.
    - palette       Corresponding colors.
@@ -196,4 +196,4 @@ useage: pkg_export.ExportImgCol(ImgCol, dateList, range, cellsize, type, folder,
 Other parameters same as `pkg_export.ExportImg`
 ```
 
-Export examples here https://code.earthengine.google.com/9abf7b0190f2e45b4d1f75d9a6b5f5f5.
+Export examples here https://code.earthengine.google.com/ccba0e127d98ca92ca872d8ef283ebd0.
